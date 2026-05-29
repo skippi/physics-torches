@@ -1,6 +1,7 @@
 package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.client.EntityPhysicsTorchRenderer;
+import com.binhjcao.physicstorches.client.PhysicsTorchParticles;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
@@ -10,6 +11,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -45,6 +47,10 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
   }
 
   private static void onClientTick(Minecraft client) {
+    if (client.level instanceof ClientLevel clientLevel) {
+      PhysicsTorchParticles.tick(clientLevel, client);
+    }
+
     if (client.player == null || client.screen != null) {
       useKeyWasDown = client.options.keyUse.isDown();
       return;
