@@ -17,7 +17,6 @@ public class EntityPhysicsTorchRenderer
     extends EntityRenderer<EntityPhysicsTorch, EntityPhysicsTorchRenderer.TorchRenderState> {
   public EntityPhysicsTorchRenderer(EntityRendererProvider.Context context) {
     super(context);
-    shadowRadius = 0.5F;
   }
 
   @Override
