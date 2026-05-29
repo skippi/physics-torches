@@ -25,6 +25,7 @@ public class EntityPhysicsTorch extends Entity {
   private static final double GRAVITY = 0.04D;
   private static final double AIR_DRAG = 0.99D;
   private static final double GROUND_DRAG = 0.7D;
+  private static final double REST_VELOCITY_SQR = 1.0E-4D;
 
   private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
       SynchedEntityData.defineId(EntityPhysicsTorch.class, EntityDataSerializers.BLOCK_STATE);
@@ -93,12 +94,11 @@ public class EntityPhysicsTorch extends Entity {
     }
 
     Vec3 motion = getDeltaMovement();
-    motion = motion.add(0.0D, -GRAVITY, 0.0D);
 
     if (onGround()) {
-      motion = new Vec3(motion.x * GROUND_DRAG, motion.y * -0.5D, motion.z * GROUND_DRAG);
+      motion = new Vec3(motion.x * GROUND_DRAG, 0.0D, motion.z * GROUND_DRAG);
     } else {
-      motion = motion.scale(AIR_DRAG);
+      motion = motion.add(0.0D, -GRAVITY, 0.0D).scale(AIR_DRAG);
     }
 
     setDeltaMovement(motion);
@@ -106,6 +106,15 @@ public class EntityPhysicsTorch extends Entity {
 
     if (horizontalCollision) {
       setDeltaMovement(getDeltaMovement().multiply(-0.2D, 1.0D, -0.2D));
+    }
+
+    if (onGround()) {
+      Vec3 settled = getDeltaMovement();
+      if (settled.lengthSqr() < REST_VELOCITY_SQR) {
+        setDeltaMovement(Vec3.ZERO);
+      } else {
+        setDeltaMovement(new Vec3(settled.x, 0.0D, settled.z));
+      }
     }
   }
 
