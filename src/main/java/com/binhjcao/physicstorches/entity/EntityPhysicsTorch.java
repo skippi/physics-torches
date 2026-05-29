@@ -16,12 +16,15 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 public class EntityPhysicsTorch extends RigidBodyEntity {
   public static final double HALF_WIDTH = 0.0625D;
@@ -29,6 +32,8 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
 
   private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
       SynchedEntityData.defineId(EntityPhysicsTorch.class, EntityDataSerializers.BLOCK_STATE);
+
+  private @Nullable BlockPos lightBlockPos;
 
   public EntityPhysicsTorch(EntityType<? extends EntityPhysicsTorch> type, Level level) {
     super(type, level);
@@ -76,6 +81,28 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
 
   public void setBlockState(BlockState blockState) {
     entityData.set(DATA_BLOCK_STATE, blockState);
+  }
+
+  @Nullable BlockPos lightBlockPos() {
+    return lightBlockPos;
+  }
+
+  void setLightBlockPos(@Nullable BlockPos pos) {
+    lightBlockPos = pos;
+  }
+
+  @Override
+  public void tick() {
+    super.tick();
+    if (!level().isClientSide()) {
+      PhysicsTorchLight.update(this);
+    }
+  }
+
+  @Override
+  public void remove(RemovalReason reason) {
+    PhysicsTorchLight.clear(this);
+    super.remove(reason);
   }
 
   @Override
