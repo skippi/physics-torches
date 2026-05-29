@@ -1,15 +1,19 @@
 package com.binhjcao.physicstorches;
 
+import com.binhjcao.physicstorches.client.EntityPhysicsTorchRenderer;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import org.lwjgl.glfw.GLFW;
 
 public class PhysicsTorchesModClient implements ClientModInitializer {
@@ -17,16 +21,27 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
 
   @Override
   public void onInitializeClient() {
+    EntityRendererRegistry.register(
+        PhysicsTorchesEntities.PHYSICS_TORCH, EntityPhysicsTorchRenderer::new);
+
     ClientTickEvents.END_CLIENT_TICK.register(PhysicsTorchesModClient::onClientTick);
 
-    UseItemCallback.EVENT.register(
-        (player, world, hand) -> {
-          if (!world.isClientSide() || !shouldDropTorch(player)) {
-            return InteractionResult.PASS;
-          }
+    UseBlockCallback.EVENT.register(PhysicsTorchesModClient::cancelIfThrowingTorch);
+    UseItemCallback.EVENT.register(PhysicsTorchesModClient::cancelIfThrowingTorch);
+  }
 
-          return InteractionResult.SUCCESS;
-        });
+  private static InteractionResult cancelIfThrowingTorch(
+      Player player, Level world, InteractionHand hand) {
+    if (!world.isClientSide() || !shouldThrowTorch(player)) {
+      return InteractionResult.PASS;
+    }
+
+    return InteractionResult.FAIL;
+  }
+
+  private static InteractionResult cancelIfThrowingTorch(
+      Player player, Level world, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+    return cancelIfThrowingTorch(player, world, hand);
   }
 
   private static void onClientTick(Minecraft client) {
@@ -38,7 +53,7 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
     boolean useKeyDown = client.options.keyUse.isDown();
     if (useKeyDown
         && !useKeyWasDown
-        && shouldDropTorch(client.player)
+        && shouldThrowTorch(client.player)
         && ClientPlayNetworking.canSend(DropTorchPayload.TYPE)) {
       ClientPlayNetworking.send(new DropTorchPayload());
     }
@@ -46,7 +61,7 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
     useKeyWasDown = useKeyDown;
   }
 
-  private static boolean shouldDropTorch(Player player) {
+  private static boolean shouldThrowTorch(Player player) {
     Minecraft client = Minecraft.getInstance();
     if (!InputConstants.isKeyDown(client.getWindow(), GLFW.GLFW_KEY_LEFT_ALT)) {
       return false;

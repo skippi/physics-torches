@@ -1,5 +1,6 @@
 package com.binhjcao.physicstorches;
 
+import com.binhjcao.physicstorches.entity.EntityPhysicsTorch;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -14,10 +15,11 @@ public class PhysicsTorchesMod implements ModInitializer {
 
   @Override
   public void onInitialize() {
+    PhysicsTorchesEntities.register();
     PayloadTypeRegistry.serverboundPlay().register(DropTorchPayload.TYPE, DropTorchPayload.CODEC);
 
     ServerPlayNetworking.registerGlobalReceiver(
-        DropTorchPayload.TYPE, (payload, context) -> dropHeldTorch(context.player()));
+        DropTorchPayload.TYPE, (payload, context) -> throwHeldTorch(context.player()));
   }
 
   public static boolean isTorch(ItemStack stack) {
@@ -28,11 +30,10 @@ public class PhysicsTorchesMod implements ModInitializer {
     return BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath().contains("torch");
   }
 
-  static void dropHeldTorch(ServerPlayer player) {
+  static void throwHeldTorch(ServerPlayer player) {
     for (InteractionHand hand : InteractionHand.values()) {
       ItemStack stack = player.getItemInHand(hand);
-      if (isTorch(stack)) {
-        player.drop(stack.split(1), true);
+      if (isTorch(stack) && EntityPhysicsTorch.throwFromPlayer(player, stack)) {
         return;
       }
     }
