@@ -29,8 +29,7 @@ public class EntityPhysicsTorchRenderer
       EntityPhysicsTorch entity, TorchRenderState state, float partialTick) {
     super.extractRenderState(entity, state, partialTick);
 
-    BlockPos blockPos =
-        BlockPos.containing(entity.getX(), entity.getBoundingBox().minY, entity.getZ());
+    BlockPos blockPos = BlockPos.containing(entity.getX(), entity.getY(), entity.getZ());
     state.movingBlockRenderState.randomSeedPos = blockPos;
     state.movingBlockRenderState.blockPos = blockPos;
     state.movingBlockRenderState.blockState = entity.getBlockState();

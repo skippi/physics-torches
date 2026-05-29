@@ -17,11 +17,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class EntityPhysicsTorch extends Entity {
-  public static final double HALF_WIDTH = 0.125D;
+  public static final double HALF_WIDTH = 0.0625D;
   public static final double HEIGHT = 0.625D;
   private static final double GRAVITY = 0.04D;
   private static final double AIR_DRAG = 0.99D;
@@ -32,7 +31,6 @@ public class EntityPhysicsTorch extends Entity {
 
   public EntityPhysicsTorch(EntityType<? extends EntityPhysicsTorch> type, Level level) {
     super(type, level);
-    refreshHitbox();
   }
 
   public EntityPhysicsTorch(Level level, BlockState blockState, Vec3 position, Vec3 velocity) {
@@ -40,14 +38,13 @@ public class EntityPhysicsTorch extends Entity {
     setBlockState(blockState);
     setPos(position.x, position.y, position.z);
     setDeltaMovement(velocity);
-    refreshHitbox();
   }
 
   public static boolean throwFromPlayer(ServerPlayer player, ItemStack stack) {
     BlockState blockState = blockStateForTorch(stack);
     Vec3 look = player.getLookAngle();
     Vec3 spawn = player.getEyePosition().add(look.scale(0.2D));
-    Vec3 position = new Vec3(spawn.x, spawn.y - HEIGHT * 0.5D, spawn.z);
+    Vec3 position = new Vec3(spawn.x, spawn.y - HEIGHT, spawn.z);
     Vec3 velocity = look.scale(0.55D).add(0.0D, 0.1D, 0.0D);
 
     EntityPhysicsTorch torch = new EntityPhysicsTorch(player.level(), blockState, position, velocity);
@@ -110,23 +107,6 @@ public class EntityPhysicsTorch extends Entity {
     if (horizontalCollision) {
       setDeltaMovement(getDeltaMovement().multiply(-0.2D, 1.0D, -0.2D));
     }
-
-    refreshHitbox();
-  }
-
-  @Override
-  public void setPos(double x, double y, double z) {
-    super.setPos(x, y, z);
-    refreshHitbox();
-  }
-
-  private void refreshHitbox() {
-    double x = getX();
-    double y = getY() - HEIGHT * 0.5D;
-    double z = getZ();
-    setBoundingBox(
-        new AABB(
-            x - HALF_WIDTH, y, z - HALF_WIDTH, x + HALF_WIDTH, y + HEIGHT, z + HALF_WIDTH));
   }
 
   @Override
