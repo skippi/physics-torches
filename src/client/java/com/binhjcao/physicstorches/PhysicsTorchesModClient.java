@@ -1,6 +1,7 @@
 package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.client.EntityPhysicsTorchRenderer;
+import com.binhjcao.physicstorches.client.EntityRigidBodyRenderer;
 import com.binhjcao.physicstorches.client.PhysicsTorchParticles;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -25,6 +26,8 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
   public void onInitializeClient() {
     EntityRendererRegistry.register(
         PhysicsTorchesEntities.PHYSICS_TORCH, EntityPhysicsTorchRenderer::new);
+    EntityRendererRegistry.register(
+        PhysicsTorchesEntities.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
 
     ClientTickEvents.END_CLIENT_TICK.register(PhysicsTorchesModClient::onClientTick);
 

@@ -1,9 +1,7 @@
 package com.binhjcao.physicstorches.entity;
 
 import com.binhjcao.physicstorches.PhysicsTorchesEntities;
-import com.binhjcao.physicstorches.physics.RigidBodyCollider;
-import com.binhjcao.physicstorches.physics.RigidBodyState;
-import com.mojang.serialization.Codec;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -13,22 +11,23 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import org.jspecify.annotations.Nullable;
 
-public class EntityPhysicsTorch extends RigidBodyEntity {
+public class EntityPhysicsTorch extends Entity {
   public static final double HALF_WIDTH = 0.0625D;
   public static final double HEIGHT = 0.625D;
+  private static final double GRAVITY = 0.08D;
 
   private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
       SynchedEntityData.defineId(EntityPhysicsTorch.class, EntityDataSerializers.BLOCK_STATE);
@@ -37,12 +36,14 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
 
   public EntityPhysicsTorch(EntityType<? extends EntityPhysicsTorch> type, Level level) {
     super(type, level);
+    setNoGravity(true);
   }
 
   public EntityPhysicsTorch(Level level, BlockState blockState, Vec3 position, Vec3 velocity) {
     this(PhysicsTorchesEntities.PHYSICS_TORCH, level);
     setBlockState(blockState);
-    initBodyFromSpawn(position, velocity);
+    setPos(position.x, position.y, position.z);
+    setDeltaMovement(velocity);
   }
 
   public static boolean throwFromPlayer(ServerPlayer player, ItemStack stack) {
@@ -83,6 +84,10 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
     entityData.set(DATA_BLOCK_STATE, blockState);
   }
 
+  public Quaternionf getOrientation(float partialTick) {
+    return new Quaternionf();
+  }
+
   @Nullable BlockPos lightBlockPos() {
     return lightBlockPos;
   }
@@ -94,7 +99,16 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
   @Override
   public void tick() {
     super.tick();
+
     if (!level().isClientSide()) {
+      Vec3 velocity = getDeltaMovement().subtract(0.0D, GRAVITY, 0.0D);
+      setDeltaMovement(velocity);
+      move(MoverType.SELF, velocity);
+
+      if (onGround()) {
+        setDeltaMovement(velocity.x * 0.55D, 0.0D, velocity.z * 0.55D);
+      }
+
       PhysicsTorchLight.update(this);
     }
   }
@@ -106,48 +120,23 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
   }
 
   @Override
-  protected RigidBodyCollider createCollider() {
-    return RigidBodyCollider.box(HALF_WIDTH, HEIGHT * 0.5D, HALF_WIDTH, HEIGHT * 0.5D);
-  }
-
-  @Override
-  protected void configureInertia(RigidBodyState body) {
-    double width = HALF_WIDTH * 2.0D;
-    double height = HEIGHT;
-    double mass = 0.1D;
-    double centerY = height * 0.5D;
-    double ixx = mass / 12.0D * (height * height + width * width) + mass * centerY * centerY;
-    double iyy = mass / 12.0D * (width * width + width * width);
-    double izz = mass / 12.0D * (height * height + width * width) + mass * centerY * centerY;
-    body.mass = mass;
-    body.invMass = 1.0D / mass;
-    body.setDiagonalInertia(ixx, iyy, izz);
-  }
-
-  @Override
   protected void defineSynchedData(SynchedEntityData.Builder builder) {
-    super.defineSynchedData(builder);
     builder.define(DATA_BLOCK_STATE, Blocks.TORCH.defaultBlockState());
   }
 
   @Override
   protected void readAdditionalSaveData(ValueInput input) {
-    super.readAdditionalSaveData(input);
     input.read("BlockState", BlockState.CODEC).ifPresent(this::setBlockState);
   }
 
   @Override
   protected void addAdditionalSaveData(ValueOutput output) {
-    super.addAdditionalSaveData(output);
     output.store("BlockState", BlockState.CODEC, getBlockState());
   }
 
   @Override
-  public void push(net.minecraft.world.entity.Entity entity) {
-    super.push(entity);
-    if (!level().isClientSide()) {
-      body.wake();
-    }
+  public boolean isPickable() {
+    return true;
   }
 
   @Override

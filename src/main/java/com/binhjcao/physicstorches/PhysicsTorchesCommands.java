@@ -1,0 +1,139 @@
+package com.binhjcao.physicstorches;
+
+import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
+public final class PhysicsTorchesCommands {
+  private static final SimpleCommandExceptionType UNKNOWN_TEST =
+      new SimpleCommandExceptionType(Component.literal("Unknown test."));
+
+  private static final Map<String, Consumer<ServerPlayer>> TESTS = new LinkedHashMap<>();
+
+  static {
+    registerTest("physicstorches:test_rot", PhysicsTorchesCommands::runTestRot);
+    registerTest("physicstorches:test_quaternion", PhysicsTorchesCommands::runTestQuaternion);
+  }
+
+  private PhysicsTorchesCommands() {}
+
+  public static void register() {
+    CommandRegistrationCallback.EVENT.register(PhysicsTorchesCommands::registerCommands);
+  }
+
+  private static void registerTest(String id, Consumer<ServerPlayer> runner) {
+    TESTS.put(id, runner);
+  }
+
+  private static void registerCommands(
+      CommandDispatcher<CommandSourceStack> dispatcher,
+      net.minecraft.commands.CommandBuildContext registryAccess,
+      Commands.CommandSelection environment) {
+    dispatcher.register(
+        Commands.literal("test")
+            .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
+            .then(
+                Commands.literal("run")
+                    .then(
+                        Commands.argument("test", StringArgumentType.greedyString())
+                            .suggests(
+                                (context, builder) -> {
+                                  String remaining = builder.getRemaining().toLowerCase();
+                                  for (String testId : TESTS.keySet()) {
+                                    if (testId.toLowerCase().startsWith(remaining)) {
+                                      builder.suggest(testId);
+                                    }
+                                  }
+                                  return builder.buildFuture();
+                                })
+                            .executes(
+                                context ->
+                                    runNamedTest(
+                                        context.getSource(),
+                                        StringArgumentType.getString(context, "test"))))));
+  }
+
+  private static int runNamedTest(CommandSourceStack source, String testId)
+      throws CommandSyntaxException {
+    Consumer<ServerPlayer> runner = TESTS.get(testId);
+    if (runner == null) {
+      throw UNKNOWN_TEST.create();
+    }
+
+    ServerPlayer player = source.getPlayerOrException();
+    runner.accept(player);
+    source.sendSuccess(() -> Component.literal("Ran " + testId + "."), true);
+    return 1;
+  }
+
+  private static void runTestRot(ServerPlayer player) {
+    spawnCubesInFrontOf(
+        player,
+        new EntityRigidBody.SpinAxis[] {EntityRigidBody.SpinAxis.X},
+        new EntityRigidBody.SpinAxis[] {EntityRigidBody.SpinAxis.Y},
+        new EntityRigidBody.SpinAxis[] {EntityRigidBody.SpinAxis.Z});
+  }
+
+  private static void runTestQuaternion(ServerPlayer player) {
+    EntityRigidBody.SpinAxis[] allAxes =
+        new EntityRigidBody.SpinAxis[] {
+          EntityRigidBody.SpinAxis.X,
+          EntityRigidBody.SpinAxis.Y,
+          EntityRigidBody.SpinAxis.Z
+        };
+    spawnCubesInFrontOf(
+        player,
+        new Quaternionf[] {
+          new Quaternionf().rotateX((float) Math.toRadians(45)).rotateY((float) Math.toRadians(45)),
+          new Quaternionf().rotateY((float) Math.toRadians(45)),
+          new Quaternionf().rotateZ((float) Math.toRadians(45))
+        },
+        allAxes,
+        allAxes,
+        allAxes);
+  }
+
+  private static void spawnCubesInFrontOf(ServerPlayer player, EntityRigidBody.SpinAxis[]... spinAxes) {
+    spawnCubesInFrontOf(player, null, spinAxes);
+  }
+
+  private static void spawnCubesInFrontOf(
+      ServerPlayer player, Quaternionf[] initialOrientations, EntityRigidBody.SpinAxis[]... spinAxes) {
+    Vec3 look = player.getLookAngle();
+    Vec3 forward = look.lengthSqr() > 1.0E-6D ? look.normalize() : new Vec3(0.0D, 0.0D, 1.0D);
+    Vec3 right = forward.cross(new Vec3(0.0D, 1.0D, 0.0D));
+    if (right.lengthSqr() < 1.0E-6D) {
+      right = new Vec3(1.0D, 0.0D, 0.0D);
+    } else {
+      right = right.normalize();
+    }
+
+    Vec3 center = player.getEyePosition().add(forward.scale(2.0D));
+    double spacing = 2.0D;
+    Vec3[] offsets = {right.scale(-spacing), Vec3.ZERO, right.scale(spacing)};
+
+    for (int i = 0; i < spinAxes.length; i++) {
+      Vec3 position = center.add(offsets[i]).subtract(0.0D, EntityRigidBody.HALF_SIZE, 0.0D);
+      Quaternionf initialOrientation =
+          initialOrientations != null ? initialOrientations[i] : null;
+      player
+          .level()
+          .addFreshEntity(
+              new EntityRigidBody(player.level(), position, initialOrientation, spinAxes[i]));
+    }
+  }
+}
