@@ -7,10 +7,15 @@ import com.mojang.serialization.Codec;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -54,6 +59,15 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
     }
 
     return Blocks.TORCH.defaultBlockState();
+  }
+
+  public static ItemStack itemStackForBlockState(BlockState blockState) {
+    var item = blockState.getBlock().asItem();
+    if (item == Items.AIR) {
+      return new ItemStack(Items.TORCH);
+    }
+
+    return new ItemStack(item);
   }
 
   public BlockState getBlockState() {
@@ -107,5 +121,38 @@ public class EntityPhysicsTorch extends RigidBodyEntity {
     if (!level().isClientSide()) {
       body.wake();
     }
+  }
+
+  @Override
+  public boolean skipAttackInteraction(Entity attacker) {
+    if (!level().isClientSide() && attacker instanceof ServerPlayer player) {
+      return tryPickUp(player);
+    }
+
+    return false;
+  }
+
+  @Override
+  public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+    Entity attacker = source.getEntity();
+    if (attacker instanceof ServerPlayer player && source.is(DamageTypes.PLAYER_ATTACK)) {
+      return tryPickUp(player);
+    }
+
+    return false;
+  }
+
+  private boolean tryPickUp(ServerPlayer player) {
+    if (!isAlive()) {
+      return false;
+    }
+
+    ItemStack stack = itemStackForBlockState(getBlockState());
+    if (!player.getInventory().add(stack)) {
+      player.drop(stack, false);
+    }
+
+    discard();
+    return true;
   }
 }

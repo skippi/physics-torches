@@ -27,3 +27,5 @@ target
 .metals
 .bloop
 sdb*
+
+llm-cache/
