@@ -10,6 +10,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MoverType;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -121,6 +122,16 @@ public class EntityPhysicsTorch extends Entity {
   @Override
   public boolean isPickable() {
     return true;
+  }
+
+  @Override
+  public boolean canBeCollidedWith(@Nullable Entity other) {
+    return true;
+  }
+
+  @Override
+  public boolean canCollideWith(Entity entity) {
+    return !isPassengerOfSameVehicle(entity);
   }
 
   @Override
