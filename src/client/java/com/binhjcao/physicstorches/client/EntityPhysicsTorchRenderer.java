@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Quaternionf;
 
 public class EntityPhysicsTorchRenderer
     extends EntityRenderer<EntityPhysicsTorch, EntityPhysicsTorchRenderer.TorchRenderState> {
@@ -33,9 +34,7 @@ public class EntityPhysicsTorchRenderer
     state.movingBlockRenderState.randomSeedPos = blockPos;
     state.movingBlockRenderState.blockPos = blockPos;
     state.movingBlockRenderState.blockState = entity.getBlockState();
-    state.tilt = entity.getXRot(partialTick);
-    state.tiltYaw = entity.getYRot(partialTick);
-    state.roll = entity.getRoll(partialTick);
+    state.orientation.set(entity.getOrientation(partialTick));
 
     if (entity.level() instanceof ClientLevel clientLevel) {
       state.movingBlockRenderState.biome = clientLevel.getBiome(blockPos);
@@ -55,14 +54,11 @@ public class EntityPhysicsTorchRenderer
       return;
     }
 
-    float pivotY = EntityPhysicsTorch.pivotYOffset(state.tilt);
-
     poseStack.pushPose();
     poseStack.translate(-0.5D, 0.0D, -0.5D);
-    poseStack.translate(0.5D, pivotY, 0.5D);
-    poseStack.mulPose(
-        EntityPhysicsTorch.torchRotation(state.tilt, state.tiltYaw, state.roll));
-    poseStack.translate(-0.5D, -pivotY, -0.5D);
+    poseStack.translate(0.5D, 0.0D, 0.5D);
+    poseStack.mulPose(state.orientation);
+    poseStack.translate(-0.5D, 0.0D, -0.5D);
     queue.submitMovingBlock(poseStack, state.movingBlockRenderState);
     poseStack.popPose();
     super.submit(state, poseStack, queue, cameraState);
@@ -70,8 +66,6 @@ public class EntityPhysicsTorchRenderer
 
   public static final class TorchRenderState extends EntityRenderState {
     public final MovingBlockRenderState movingBlockRenderState = new MovingBlockRenderState();
-    public float tilt;
-    public float tiltYaw;
-    public float roll;
+    public Quaternionf orientation = new Quaternionf();
   }
 }
