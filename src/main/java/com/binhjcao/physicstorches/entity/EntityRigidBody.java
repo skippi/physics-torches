@@ -14,8 +14,11 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
+import java.util.Optional;
+
 public class EntityRigidBody extends Entity {
   public static final double HALF_SIZE = 0.5D;
+  private static final RigidBodyCollisionModel COLLISION = RigidBodyCollisionModel.cube(HALF_SIZE);
   private static final double SPIN_SPEED = 2.5D;
   private static final float TICK_DT = 0.05F;
 
@@ -44,7 +47,7 @@ public class EntityRigidBody extends Entity {
 
   private final Quaternionf orientation = new Quaternionf();
   private final Quaternionf prevOrientation = new Quaternionf();
-  private SpinAxis[] spinAxes = new SpinAxis[] {SpinAxis.Y};
+  private SpinAxis[] spinAxes = new SpinAxis[0];
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
     super(type, level);
@@ -60,15 +63,43 @@ public class EntityRigidBody extends Entity {
   public EntityRigidBody(
       Level level, Vec3 position, Quaternionf initialOrientation, SpinAxis... spinAxes) {
     this(PhysicsTorchesEntities.RIGID_BODY_CUBE, level);
-    if (spinAxes.length > 0) {
-      this.spinAxes = spinAxes;
-    }
+    this.spinAxes = spinAxes;
     if (initialOrientation != null) {
       orientation.set(initialOrientation);
       prevOrientation.set(initialOrientation);
     }
     setPos(position.x, position.y, position.z);
     syncOrientationData();
+  }
+
+  public EntityRigidBody(
+      EntityType<? extends EntityRigidBody> type,
+      Level level,
+      Vec3 position,
+      Quaternionf initialOrientation,
+      SpinAxis... spinAxes) {
+    this(type, level);
+    this.spinAxes = spinAxes;
+    if (initialOrientation != null) {
+      orientation.set(initialOrientation);
+      prevOrientation.set(initialOrientation);
+    }
+    setPos(position.x, position.y, position.z);
+    syncOrientationData();
+  }
+
+  public Vec3 getCollisionCenter() {
+    return new Vec3(getX(), getY() + HALF_SIZE, getZ());
+  }
+
+  public RigidBodyCollisionModel collisionModel() {
+    return COLLISION;
+  }
+
+  public Optional<RigidBodyCollisionModel.SurfaceHit> raycastSurface(
+      Vec3 rayOrigin, Vec3 rayDirection, float partialTick, double maxReach) {
+    return COLLISION.raycast(
+        getOrientation(partialTick), getCollisionCenter(), rayOrigin, rayDirection, maxReach);
   }
 
   public Quaternionf getOrientation(float partialTick) {

@@ -1,0 +1,126 @@
+package com.binhjcao.physicstorches.client;
+
+import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.binhjcao.physicstorches.entity.RigidBodyCollisionModel;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.gizmos.Gizmos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
+
+import java.util.Optional;
+
+public final class RigidBodyDebugRenderer {
+  private static final double TARGET_REACH = 6.0D;
+  private static final int COLLISION_OUTLINE_COLOR = 0xFF00FF00;
+  private static final int HIT_POINT_COLOR = 0xFFFF5555;
+  private static final int HIT_NORMAL_COLOR = 0xFF55FFFF;
+
+  private RigidBodyDebugRenderer() {}
+
+  public static void tick(Minecraft client) {
+    if (!(client.level instanceof ClientLevel level) || client.player == null) {
+      return;
+    }
+
+    boolean visualizeCollision =
+        client.debugEntries.isCurrentlyEnabled(PhysicsTorchesDebugOptions.VISUALIZE_RIGIDBODY);
+    boolean visualizeTransform =
+        client.debugEntries.isCurrentlyEnabled(PhysicsTorchesDebugOptions.VISUALIZE_TRANSFORM);
+    if (!visualizeCollision && !visualizeTransform) {
+      return;
+    }
+
+    try (var ignored = client.collectPerTickGizmos()) {
+      float partialTick = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+      if (visualizeCollision) {
+        renderCollisionOutlines(level, partialTick);
+      }
+
+      if (visualizeTransform) {
+        renderTransformTarget(client, level, partialTick);
+      }
+    }
+  }
+
+  private static void renderCollisionOutlines(ClientLevel level, float partialTick) {
+    for (Entity entity : level.entitiesForRendering()) {
+      if (entity instanceof EntityRigidBody rigidBody) {
+        renderCollisionOutline(rigidBody, partialTick);
+      }
+    }
+  }
+
+  private static void renderCollisionOutline(EntityRigidBody body, float partialTick) {
+    Quaternionf orientation = body.getOrientation(partialTick);
+    Vec3 center = body.getCollisionCenter();
+    RigidBodyCollisionModel model = body.collisionModel();
+    double halfSize = model.halfSize();
+    Vec3[] corners =
+        new Vec3[] {
+          model.localToWorld(new Vec3(-halfSize, -halfSize, -halfSize), center, orientation),
+          model.localToWorld(new Vec3(halfSize, -halfSize, -halfSize), center, orientation),
+          model.localToWorld(new Vec3(-halfSize, -halfSize, halfSize), center, orientation),
+          model.localToWorld(new Vec3(halfSize, -halfSize, halfSize), center, orientation),
+          model.localToWorld(new Vec3(-halfSize, halfSize, -halfSize), center, orientation),
+          model.localToWorld(new Vec3(halfSize, halfSize, -halfSize), center, orientation),
+          model.localToWorld(new Vec3(-halfSize, halfSize, halfSize), center, orientation),
+          model.localToWorld(new Vec3(halfSize, halfSize, halfSize), center, orientation)
+        };
+
+    emitEdge(corners[0], corners[1]);
+    emitEdge(corners[1], corners[3]);
+    emitEdge(corners[3], corners[2]);
+    emitEdge(corners[2], corners[0]);
+    emitEdge(corners[4], corners[5]);
+    emitEdge(corners[5], corners[7]);
+    emitEdge(corners[7], corners[6]);
+    emitEdge(corners[6], corners[4]);
+    emitEdge(corners[0], corners[4]);
+    emitEdge(corners[1], corners[5]);
+    emitEdge(corners[2], corners[6]);
+    emitEdge(corners[3], corners[7]);
+  }
+
+  private static void emitEdge(Vec3 start, Vec3 end) {
+    Gizmos.line(start, end, COLLISION_OUTLINE_COLOR);
+  }
+
+  private static void renderTransformTarget(Minecraft client, ClientLevel level, float partialTick) {
+    LocalPlayer player = client.player;
+    if (player == null) {
+      return;
+    }
+
+    Vec3 rayOrigin = player.getEyePosition(partialTick);
+    Vec3 rayDirection = player.getViewVector(partialTick);
+    AABB searchBox = player.getBoundingBox().inflate(TARGET_REACH);
+
+    RigidBodyCollisionModel.SurfaceHit closestHit = null;
+    for (EntityRigidBody body : level.getEntitiesOfClass(EntityRigidBody.class, searchBox)) {
+      Optional<RigidBodyCollisionModel.SurfaceHit> hit =
+          body.raycastSurface(rayOrigin, rayDirection, partialTick, TARGET_REACH);
+      if (hit.isEmpty()) {
+        continue;
+      }
+
+      if (closestHit == null
+          || hit.get().worldPoint().distanceToSqr(rayOrigin)
+              < closestHit.worldPoint().distanceToSqr(rayOrigin)) {
+        closestHit = hit.get();
+      }
+    }
+
+    if (closestHit == null) {
+      return;
+    }
+
+    Vec3 hitPoint = closestHit.worldPoint();
+    Vec3 normal = closestHit.worldNormal();
+    Gizmos.point(hitPoint, HIT_POINT_COLOR, 5.0F);
+    Gizmos.arrow(hitPoint, hitPoint.add(normal.scale(0.35D)), HIT_NORMAL_COLOR);
+  }
+}

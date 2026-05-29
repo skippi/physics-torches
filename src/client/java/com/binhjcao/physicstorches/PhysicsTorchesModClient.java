@@ -3,6 +3,8 @@ package com.binhjcao.physicstorches;
 import com.binhjcao.physicstorches.client.EntityPhysicsTorchRenderer;
 import com.binhjcao.physicstorches.client.EntityRigidBodyRenderer;
 import com.binhjcao.physicstorches.client.PhysicsTorchParticles;
+import com.binhjcao.physicstorches.client.PhysicsTorchesDebugOptions;
+import com.binhjcao.physicstorches.client.RigidBodyDebugRenderer;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
@@ -24,6 +26,8 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
 
   @Override
   public void onInitializeClient() {
+    PhysicsTorchesDebugOptions.register();
+
     EntityRendererRegistry.register(
         PhysicsTorchesEntities.PHYSICS_TORCH, EntityPhysicsTorchRenderer::new);
     EntityRendererRegistry.register(
@@ -52,6 +56,7 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
   private static void onClientTick(Minecraft client) {
     if (client.level instanceof ClientLevel clientLevel) {
       PhysicsTorchParticles.tick(clientLevel, client);
+      RigidBodyDebugRenderer.tick(client);
     }
 
     if (client.player == null || client.screen != null) {
