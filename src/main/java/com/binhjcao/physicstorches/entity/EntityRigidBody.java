@@ -249,10 +249,44 @@ public class EntityRigidBody extends Entity {
   }
 
   @Override
-  protected void readAdditionalSaveData(ValueInput input) {}
+  protected void readAdditionalSaveData(ValueInput input) {
+    mass(input.getDoubleOr("mass", mass));
+    linearDamp(input.getDoubleOr("linear_damp", linearDamp));
+    angularDamp(input.getDoubleOr("angular_damp", angularDamp));
+    gravityScale(input.getDoubleOr("gravity_scale", gravityScale));
+    sleepThreshold(input.getDoubleOr("sleep_threshold", sleepThreshold));
+    input.read("angular_velocity", Vec3.CODEC).ifPresent(this::angularVelocity);
+    input.read("linear_velocity", Vec3.CODEC).ifPresent(this::linearVelocity);
+    input.read("constant_force", Vec3.CODEC).ifPresent(this::constantForce);
+    input.read("constant_torque", Vec3.CODEC).ifPresent(this::constantTorque);
+    orientation.set(
+        input.getFloatOr("orient_x", orientation.x),
+        input.getFloatOr("orient_y", orientation.y),
+        input.getFloatOr("orient_z", orientation.z),
+        input.getFloatOr("orient_w", orientation.w));
+    orientation.normalize();
+    prevOrientation.set(orientation);
+    sleeping = input.getBooleanOr("sleeping", sleeping);
+    syncOrientationData();
+  }
 
   @Override
-  protected void addAdditionalSaveData(ValueOutput output) {}
+  protected void addAdditionalSaveData(ValueOutput output) {
+    output.putDouble("mass", mass);
+    output.putDouble("linear_damp", linearDamp);
+    output.putDouble("angular_damp", angularDamp);
+    output.putDouble("gravity_scale", gravityScale);
+    output.putDouble("sleep_threshold", sleepThreshold);
+    output.store("angular_velocity", Vec3.CODEC, angularVelocity);
+    output.store("linear_velocity", Vec3.CODEC, linearVelocity);
+    output.store("constant_force", Vec3.CODEC, constantForce);
+    output.store("constant_torque", Vec3.CODEC, constantTorque);
+    output.putFloat("orient_x", orientation.x);
+    output.putFloat("orient_y", orientation.y);
+    output.putFloat("orient_z", orientation.z);
+    output.putFloat("orient_w", orientation.w);
+    output.putBoolean("sleeping", sleeping);
+  }
 
   @Override
   public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
