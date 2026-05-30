@@ -63,6 +63,7 @@ public class EntityRigidBody extends Entity {
   private Vec3 linearVelocity = Vec3.ZERO;
   private Vec3 constantForce = Vec3.ZERO;
   private Vec3 constantTorque = Vec3.ZERO;
+  private boolean linearLock = false;
   private boolean sleeping = false;
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
@@ -168,6 +169,14 @@ public class EntityRigidBody extends Entity {
 
   public Vec3 inertia() {
     return cubeInertia(mass(), HALF_SIZE);
+  }
+
+  public boolean linearLock() {
+    return linearLock;
+  }
+
+  public void linearLock(boolean lock) {
+    this.linearLock = lock;
   }
 
   protected boolean sleeping() {
@@ -399,8 +408,11 @@ public class EntityRigidBody extends Entity {
       return;
     }
 
-    Vec3 next = position().add(linearVelocity());
-    setPos(next.x, next.y, next.z);
+    if (!linearLock) {
+      Vec3 next = position().add(linearVelocity());
+      setPos(next.x, next.y, next.z);
+    }
+
     linearVelocity(linearVelocity().scale(1.0D - linearDamp * physicsDt()));
   }
 
