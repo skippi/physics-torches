@@ -327,7 +327,7 @@ public class EntityRigidBody extends Entity {
 
   public void applyForce(Vec3 force, Vec3 position) {
     wake();
-    linearVelocity = linearVelocity.add(force.scale(physicsDt() / mass));
+    linearVelocity(linearVelocity().add(force.scale(physicsDt() / mass)));
     if (position.lengthSqr() > 1.0E-8D) {
       applyTorque(position.cross(force));
     }
@@ -339,7 +339,7 @@ public class EntityRigidBody extends Entity {
 
   public void applyImpulse(Vec3 impulse, Vec3 position) {
     wake();
-    linearVelocity = linearVelocity.add(impulse.scale(1.0D / mass));
+    linearVelocity(linearVelocity().add(impulse.scale(1.0D / mass)));
     if (position.lengthSqr() > 1.0E-8D) {
       applyTorqueImpulse(position.cross(impulse));
     }
@@ -348,13 +348,13 @@ public class EntityRigidBody extends Entity {
   public void applyTorque(Vec3 torque) {
     wake();
     Vec3 torqueBody = toBodyDirection(torque);
-    angularVelocity = angularVelocity.add(divideByInertia(torqueBody).scale(physicsDt()));
+    angularVelocity(angularVelocity().add(divideByInertia(torqueBody).scale(physicsDt())));
   }
 
   public void applyTorqueImpulse(Vec3 impulse) {
     wake();
     Vec3 impulseBody = toBodyDirection(impulse);
-    angularVelocity = angularVelocity.add(divideByInertia(impulseBody));
+    angularVelocity(angularVelocity().add(divideByInertia(impulseBody)));
   }
 
   protected void integrateAngularVelocity() {
@@ -367,7 +367,7 @@ public class EntityRigidBody extends Entity {
     orientation.rotateY((float) (angularVelocity.y * dt));
     orientation.rotateZ((float) (angularVelocity.z * dt));
     orientation.normalize();
-    angularVelocity = angularVelocity.scale(1.0D - angularDamp * physicsDt());
+    angularVelocity(angularVelocity().scale(1.0D - angularDamp * physicsDt()));
   }
 
   protected void integrateLinearVelocity() {
@@ -377,7 +377,7 @@ public class EntityRigidBody extends Entity {
 
     Vec3 next = position().add(linearVelocity);
     setPos(next.x, next.y, next.z);
-    linearVelocity = linearVelocity.scale(1.0D - linearDamp * physicsDt());
+    linearVelocity(linearVelocity().scale(1.0D - linearDamp * physicsDt()));
   }
 
   protected double physicsDt() {
@@ -393,14 +393,14 @@ public class EntityRigidBody extends Entity {
       return;
     }
 
-    if (specificKineticEnergy(linearVelocity, angularVelocity) < sleepThreshold) {
+    if (specificKineticEnergy() < sleepThreshold) {
       sleeping = true;
-      linearVelocity = Vec3.ZERO;
-      angularVelocity = Vec3.ZERO;
+      linearVelocity(Vec3.ZERO);
+      angularVelocity(Vec3.ZERO);
     }
   }
 
-  protected double specificKineticEnergy(Vec3 linearVelocity, Vec3 angularVelocity) {
+  protected double specificKineticEnergy() {
     double linearEnergy = 0.5D * linearVelocity.lengthSqr();
     double angularEnergy =
         0.5D
