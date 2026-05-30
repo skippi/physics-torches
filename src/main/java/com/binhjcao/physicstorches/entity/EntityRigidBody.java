@@ -371,11 +371,11 @@ public class EntityRigidBody extends Entity {
   }
 
   protected void integrateLinearVelocity() {
-    if (linearVelocity.lengthSqr() <= 1.0E-8D) {
+    if (linearVelocity().lengthSqr() <= 1.0E-8D) {
       return;
     }
 
-    Vec3 next = position().add(linearVelocity);
+    Vec3 next = position().add(linearVelocity());
     setPos(next.x, next.y, next.z);
     linearVelocity(linearVelocity().scale(1.0D - linearDamp * physicsDt()));
   }
@@ -389,11 +389,11 @@ public class EntityRigidBody extends Entity {
   }
 
   protected void updateSleepState() {
-    if (sleepThreshold <= 1.0E-8D) {
+    if (sleepThreshold() <= 1.0E-8D) {
       return;
     }
 
-    if (specificKineticEnergy() < sleepThreshold) {
+    if (specificKineticEnergy() < sleepThreshold()) {
       sleeping = true;
       linearVelocity(Vec3.ZERO);
       angularVelocity(Vec3.ZERO);
