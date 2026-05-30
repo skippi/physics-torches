@@ -32,10 +32,6 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
         PhysicsTorchesEntities.PHYSICS_TORCH, EntityPhysicsTorchRenderer::new);
     EntityRendererRegistry.register(
         PhysicsTorchesEntities.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
-    EntityRendererRegistry.register(
-        PhysicsTorchesEntities.RIGID_BODY_TORQUE, EntityRigidBodyRenderer::new);
-    EntityRendererRegistry.register(
-        PhysicsTorchesEntities.RIGID_BODY_LINEAR, EntityRigidBodyRenderer::new);
 
     ClientTickEvents.END_CLIENT_TICK.register(PhysicsTorchesModClient::onClientTick);
 

@@ -6,6 +6,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
@@ -64,7 +65,9 @@ public class EntityRigidBody extends Entity {
   private Vec3 constantForce = Vec3.ZERO;
   private Vec3 constantTorque = Vec3.ZERO;
   private boolean linearLock = false;
+  private boolean inputRayPickable = true;
   private boolean sleeping = false;
+  private int lastSurfaceInputTick = -1;
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
     super(type, level);
@@ -179,6 +182,14 @@ public class EntityRigidBody extends Entity {
     this.linearLock = lock;
   }
 
+  public boolean inputRayPickable() {
+    return inputRayPickable;
+  }
+
+  public void inputRayPickable(boolean inputRayPickable) {
+    this.inputRayPickable = inputRayPickable;
+  }
+
   protected boolean sleeping() {
     return sleeping;
   }
@@ -276,6 +287,8 @@ public class EntityRigidBody extends Entity {
     orientation.normalize();
     prevOrientation.set(orientation);
     sleeping = input.getBooleanOr("sleeping", sleeping);
+    linearLock = input.getBooleanOr("linear_lock", linearLock);
+    inputRayPickable = input.getBooleanOr("input_ray_pickable", inputRayPickable);
     syncOrientationData();
   }
 
@@ -295,12 +308,57 @@ public class EntityRigidBody extends Entity {
     output.putFloat("orient_z", orientation.z);
     output.putFloat("orient_w", orientation.w);
     output.putBoolean("sleeping", sleeping);
+    output.putBoolean("linear_lock", linearLock);
+    output.putBoolean("input_ray_pickable", inputRayPickable);
+  }
+
+  @Override
+  public boolean isPickable() {
+    return inputRayPickable;
+  }
+
+  @Override
+  public boolean isAttackable() {
+    return inputRayPickable;
   }
 
   @Override
   public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+    Entity attacker = source.getEntity();
+    if (attacker instanceof Player player && source.is(DamageTypes.PLAYER_ATTACK)) {
+      return handlePlayerSurfaceInput(player);
+    }
+
     return false;
   }
+
+  protected boolean handlePlayerSurfaceInput(Player player) {
+    if (!inputRayPickable || level().isClientSide()) {
+      return false;
+    }
+
+    if (tickCount == lastSurfaceInputTick) {
+      return true;
+    }
+
+    PlayerLookRay ray = PlayerLookRay.from(player, 1.0F);
+    if (!ray.isValid()) {
+      return false;
+    }
+
+    Optional<RigidBodyCollisionModel.SurfaceHit> hit =
+        raycastSurface(ray.origin(), ray.direction(), 1.0F, TARGET_REACH);
+    if (hit.isEmpty()) {
+      return false;
+    }
+
+    RigidBodyCollisionModel.SurfaceHit surfaceHit = hit.get();
+    onSurfaceInput(player, surfaceHit.worldPoint(), surfaceHit.worldNormal());
+    lastSurfaceInputTick = tickCount;
+    return true;
+  }
+
+  protected void onSurfaceInput(Player player, Vec3 surfacePosition, Vec3 surfaceNormal) {}
 
   @Override
   public void tick() {

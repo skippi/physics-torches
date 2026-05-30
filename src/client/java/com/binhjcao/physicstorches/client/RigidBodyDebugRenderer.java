@@ -1,7 +1,6 @@
 package com.binhjcao.physicstorches.client;
 
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
-import com.binhjcao.physicstorches.entity.EntityRigidBodyTorque;
 import com.binhjcao.physicstorches.entity.RigidBodyCollisionModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -17,9 +16,6 @@ public final class RigidBodyDebugRenderer {
   private static final int COLLISION_OUTLINE_COLOR = 0xFF00FF00;
   private static final int HIT_POINT_COLOR = 0xFFFF5555;
   private static final int HIT_NORMAL_COLOR = 0xFF55FFFF;
-  private static final int FORCE_HIT_COLOR = 0xFFFFAA00;
-  private static final int FORCE_DIRECTION_COLOR = 0xFFFF5500;
-  private static final double FORCE_ARROW_LENGTH = 0.75D;
 
   private RigidBodyDebugRenderer() {}
 
@@ -52,30 +48,8 @@ public final class RigidBodyDebugRenderer {
     for (Entity entity : level.entitiesForRendering()) {
       if (entity instanceof EntityRigidBody rigidBody) {
         renderCollisionOutline(rigidBody, partialTick);
-        if (entity instanceof EntityRigidBodyTorque torqueBody) {
-          renderDebugImpulse(torqueBody);
-        }
       }
     }
-  }
-
-  private static void renderDebugImpulse(EntityRigidBodyTorque body) {
-    if (!body.hasDebugImpulse()) {
-      return;
-    }
-
-    Vec3 hitPoint = body.getDebugHitPoint();
-    Vec3 force = body.getDebugForce();
-    if (force.lengthSqr() < 1.0E-8D) {
-      return;
-    }
-
-    Vec3 forceDirection = force.normalize();
-    Gizmos.point(hitPoint, FORCE_HIT_COLOR, 5.0F);
-    Gizmos.arrow(
-        hitPoint.subtract(forceDirection.scale(FORCE_ARROW_LENGTH)),
-        hitPoint,
-        FORCE_DIRECTION_COLOR);
   }
 
   private static void renderCollisionOutline(EntityRigidBody body, float partialTick) {

@@ -1,8 +1,6 @@
 package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
-import com.binhjcao.physicstorches.entity.EntityRigidBodyLinear;
-import com.binhjcao.physicstorches.entity.EntityRigidBodyTorque;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -13,6 +11,8 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
@@ -107,13 +107,39 @@ public final class PhysicsTorchesCommands {
   }
 
   private static void runTestTorque(ServerPlayer player) {
-    player.level().addFreshEntity(new EntityRigidBodyTorque(player.level(), cubePositionInFrontOf(player)));
+    class EntityTestTorque extends EntityRigidBody {
+      public EntityTestTorque(Level level) {
+        super(level, cubePositionInFrontOf(player));
+        linearLock(true);
+        angularDamp(0.3D);
+      }
+
+      @Override
+      protected void onSurfaceInput(Player player, Vec3 surfacePosition, Vec3 surfaceNormal) {
+        Vec3 force = surfaceNormal.scale(-3.0D);
+        Vec3 leverArm = surfacePosition.subtract(position());
+        applyTorqueImpulse(leverArm.cross(force).scale(0.35D));
+      }
+    }
+    player.level().addFreshEntity(new EntityTestTorque(player.level()));
   }
 
   private static void runTestLinear(ServerPlayer player) {
-    player
-        .level()
-        .addFreshEntity(new EntityRigidBodyLinear(player.level(), cubePositionInFrontOf(player)));
+    class EntityTestLinear extends EntityRigidBody {
+      public EntityTestLinear(Level level) {
+        super(level, cubePositionInFrontOf(player));
+        gravityScale(0);
+      }
+
+      @Override
+      protected void onSurfaceInput(Player player, Vec3 surfacePosition, Vec3 surfaceNormal) {
+        Vec3 impulse =
+          PlayerLookRay.from(player, 1.0F).normalizedDirection().scale(2.5D);
+        Vec3 leverArm = surfacePosition.subtract(position());
+        applyImpulse(impulse, leverArm);
+      }
+    }
+    player.level().addFreshEntity(new EntityTestLinear(player.level()));
   }
 
   private static Vec3 cubePositionInFrontOf(ServerPlayer player) {
