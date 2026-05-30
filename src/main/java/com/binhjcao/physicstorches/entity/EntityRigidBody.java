@@ -63,7 +63,6 @@ public class EntityRigidBody extends Entity {
   private Vec3 linearVelocity = Vec3.ZERO;
   private Vec3 constantForce = Vec3.ZERO;
   private Vec3 constantTorque = Vec3.ZERO;
-  private Vec3 inertia = Vec3.ZERO;
   private boolean sleeping = false;
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
@@ -101,7 +100,6 @@ public class EntityRigidBody extends Entity {
 
   public void mass(double mass) {
     this.mass = Math.max(1.0E-4D, mass);
-    inertia = cubeInertia(this.mass, HALF_SIZE);
   }
 
   public double linearDamp() {
@@ -169,15 +167,7 @@ public class EntityRigidBody extends Entity {
   }
 
   public Vec3 inertia() {
-    return inertia;
-  }
-
-  public void inertia(Vec3 inertia) {
-    this.inertia =
-        new Vec3(
-            Math.max(1.0E-8D, inertia.x),
-            Math.max(1.0E-8D, inertia.y),
-            Math.max(1.0E-8D, inertia.z));
+    return cubeInertia(mass(), HALF_SIZE);
   }
 
   protected boolean sleeping() {
@@ -404,9 +394,9 @@ public class EntityRigidBody extends Entity {
     double linearEnergy = 0.5D * linearVelocity.lengthSqr();
     double angularEnergy =
         0.5D
-            * (inertia.x * angularVelocity.x * angularVelocity.x
-                + inertia.y * angularVelocity.y * angularVelocity.y
-                + inertia.z * angularVelocity.z * angularVelocity.z);
+            * (inertia().x * angularVelocity.x * angularVelocity.x
+                + inertia().y * angularVelocity.y * angularVelocity.y
+                + inertia().z * angularVelocity.z * angularVelocity.z);
     return (linearEnergy + angularEnergy) / mass;
   }
 
@@ -425,7 +415,7 @@ public class EntityRigidBody extends Entity {
   }
 
   protected Vec3 divideByInertia(Vec3 vector) {
-    return new Vec3(vector.x / inertia.x, vector.y / inertia.y, vector.z / inertia.z);
+    return new Vec3(vector.x / inertia().x, vector.y / inertia().y, vector.z / inertia().z);
   }
 
   protected void syncOrientationData() {
