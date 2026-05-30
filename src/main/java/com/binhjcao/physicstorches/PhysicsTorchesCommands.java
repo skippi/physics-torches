@@ -1,6 +1,7 @@
 package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.binhjcao.physicstorches.entity.EntityRigidBodyTorque;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -27,6 +28,7 @@ public final class PhysicsTorchesCommands {
   static {
     registerTest("physicstorches:test_rot", PhysicsTorchesCommands::runTestRot);
     registerTest("physicstorches:test_quaternion", PhysicsTorchesCommands::runTestQuaternion);
+    registerTest("physicstorches:test_torque", PhysicsTorchesCommands::runTestTorque);
   }
 
   private PhysicsTorchesCommands() {}
@@ -107,14 +109,24 @@ public final class PhysicsTorchesCommands {
         allAxes);
   }
 
+  private static void runTestTorque(ServerPlayer player) {
+    player.level().addFreshEntity(new EntityRigidBodyTorque(player.level(), cubePositionInFrontOf(player)));
+  }
+
+  private static Vec3 cubePositionInFrontOf(ServerPlayer player) {
+    EntityRigidBody.PlayerLookRay ray = EntityRigidBody.PlayerLookRay.from(player, 1.0F);
+    Vec3 center = ray.origin().add(ray.normalizedDirection().scale(2.0D));
+    return center.subtract(0.0D, EntityRigidBody.HALF_SIZE, 0.0D);
+  }
+
   private static void spawnCubesInFrontOf(ServerPlayer player, EntityRigidBody.SpinAxis[]... spinAxes) {
     spawnCubesInFrontOf(player, null, spinAxes);
   }
 
   private static void spawnCubesInFrontOf(
       ServerPlayer player, Quaternionf[] initialOrientations, EntityRigidBody.SpinAxis[]... spinAxes) {
-    Vec3 look = player.getLookAngle();
-    Vec3 forward = look.lengthSqr() > 1.0E-6D ? look.normalize() : new Vec3(0.0D, 0.0D, 1.0D);
+    EntityRigidBody.PlayerLookRay ray = EntityRigidBody.PlayerLookRay.from(player, 1.0F);
+    Vec3 forward = ray.normalizedDirection();
     Vec3 right = forward.cross(new Vec3(0.0D, 1.0D, 0.0D));
     if (right.lengthSqr() < 1.0E-6D) {
       right = new Vec3(1.0D, 0.0D, 0.0D);
@@ -122,7 +134,7 @@ public final class PhysicsTorchesCommands {
       right = right.normalize();
     }
 
-    Vec3 center = player.getEyePosition().add(forward.scale(2.0D));
+    Vec3 center = ray.origin().add(forward.scale(2.0D));
     double spacing = 2.0D;
     Vec3[] offsets = {right.scale(-spacing), Vec3.ZERO, right.scale(spacing)};
 

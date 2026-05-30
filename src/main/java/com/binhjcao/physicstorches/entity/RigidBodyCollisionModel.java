@@ -1,5 +1,6 @@
 package com.binhjcao.physicstorches.entity;
 
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -7,7 +8,21 @@ import org.joml.Vector3f;
 import java.util.Optional;
 
 public final class RigidBodyCollisionModel {
-  public record SurfaceHit(Vec3 worldPoint, Vec3 worldNormal) {}
+  private static final double FACE_EPSILON = 1.0E-4D;
+  private static final double RAY_EPSILON = 1.0E-8D;
+
+  private static final int[][] CORNER_SIGNS = {
+    {-1, -1, -1}, {1, -1, -1}, {-1, -1, 1}, {1, -1, 1},
+    {-1, 1, -1}, {1, 1, -1}, {-1, 1, 1}, {1, 1, 1}
+  };
+
+  public record SurfaceHit(Vec3 worldPoint, Vec3 worldNormal) {
+    public Vec3 inwardNormal() {
+      return worldNormal.scale(-1.0D);
+    }
+  }
+
+  private record LocalSurfaceHit(Vec3 point, Vec3 outwardNormal) {}
 
   private final double halfSize;
 
@@ -29,24 +44,35 @@ public final class RigidBodyCollisionModel {
       Vec3 rayOrigin,
       Vec3 rayDirection,
       double maxReach) {
-    if (rayDirection.lengthSqr() < 1.0E-8D) {
+    return raycast(orientation, center, rayOrigin, rayDirection, maxReach, 0.0D);
+  }
+
+  public Optional<SurfaceHit> raycast(
+      Quaternionf orientation,
+      Vec3 center,
+      Vec3 rayOrigin,
+      Vec3 rayDirection,
+      double maxReach,
+      double surfaceTolerance) {
+    if (rayDirection.lengthSqr() < RAY_EPSILON) {
       return Optional.empty();
     }
 
     Vec3 localOrigin = toLocalPoint(rayOrigin, center, orientation);
     Vec3 localDirection = toLocalDirection(rayDirection, orientation);
-    Optional<Vec3> localHit = intersectRayCube(localOrigin, localDirection, halfSize);
+    Optional<LocalSurfaceHit> localHit =
+        intersectRayCube(localOrigin, localDirection, halfSize, surfaceTolerance);
     if (localHit.isEmpty()) {
       return Optional.empty();
     }
 
-    Vec3 worldPoint = toWorldPoint(localHit.get(), center, orientation);
+    LocalSurfaceHit hit = localHit.get();
+    Vec3 worldPoint = toWorldPoint(hit.point(), center, orientation);
     if (worldPoint.subtract(rayOrigin).length() > maxReach) {
       return Optional.empty();
     }
 
-    Vec3 localNormal = localFaceNormal(localHit.get());
-    Vec3 worldNormal = toWorldDirection(localNormal, orientation);
+    Vec3 worldNormal = toWorldDirection(hit.outwardNormal(), orientation).normalize();
     return Optional.of(new SurfaceHit(worldPoint, worldNormal));
   }
 
@@ -54,18 +80,151 @@ public final class RigidBodyCollisionModel {
     return toWorldPoint(localPoint, center, orientation);
   }
 
-  private static Vec3 localFaceNormal(Vec3 localHit) {
-    double absX = Math.abs(localHit.x);
-    double absY = Math.abs(localHit.y);
-    double absZ = Math.abs(localHit.z);
+  public Vec3[] worldCorners(Vec3 center, Quaternionf orientation) {
+    Vec3[] corners = new Vec3[CORNER_SIGNS.length];
+    for (int i = 0; i < CORNER_SIGNS.length; i++) {
+      int[] signs = CORNER_SIGNS[i];
+      corners[i] =
+          localToWorld(
+              new Vec3(signs[0] * halfSize, signs[1] * halfSize, signs[2] * halfSize),
+              center,
+              orientation);
+    }
+    return corners;
+  }
 
-    if (absX >= absY && absX >= absZ) {
-      return new Vec3(Math.signum(localHit.x), 0.0D, 0.0D);
+  public AABB orientedBounds(Vec3 center, Quaternionf orientation, double inflate) {
+    Vec3[] corners = worldCorners(center, orientation);
+    double minX = Double.POSITIVE_INFINITY;
+    double minY = Double.POSITIVE_INFINITY;
+    double minZ = Double.POSITIVE_INFINITY;
+    double maxX = Double.NEGATIVE_INFINITY;
+    double maxY = Double.NEGATIVE_INFINITY;
+    double maxZ = Double.NEGATIVE_INFINITY;
+
+    for (Vec3 corner : corners) {
+      minX = Math.min(minX, corner.x);
+      minY = Math.min(minY, corner.y);
+      minZ = Math.min(minZ, corner.z);
+      maxX = Math.max(maxX, corner.x);
+      maxY = Math.max(maxY, corner.y);
+      maxZ = Math.max(maxZ, corner.z);
     }
-    if (absY >= absX && absY >= absZ) {
-      return new Vec3(0.0D, Math.signum(localHit.y), 0.0D);
+
+    AABB bounds = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+    return inflate > 0.0D ? bounds.inflate(inflate) : bounds;
+  }
+
+  public static Vec3 inwardNormal(Vec3 outwardNormal) {
+    return outwardNormal.scale(-1.0D);
+  }
+
+  private static Optional<LocalSurfaceHit> intersectRayCube(
+      Vec3 origin, Vec3 direction, double halfSize, double surfaceTolerance) {
+    double expandedHalfSize = halfSize + surfaceTolerance;
+    double tMin = Double.NEGATIVE_INFINITY;
+    double tMax = Double.POSITIVE_INFINITY;
+    double[] originComponents = {origin.x, origin.y, origin.z};
+    double[] directionComponents = {direction.x, direction.y, direction.z};
+
+    for (int axis = 0; axis < 3; axis++) {
+      if (Math.abs(directionComponents[axis]) < RAY_EPSILON) {
+        if (originComponents[axis] < -expandedHalfSize
+            || originComponents[axis] > expandedHalfSize) {
+          return Optional.empty();
+        }
+        continue;
+      }
+
+      double tNear = (-expandedHalfSize - originComponents[axis]) / directionComponents[axis];
+      double tFar = (expandedHalfSize - originComponents[axis]) / directionComponents[axis];
+      if (tNear > tFar) {
+        double swap = tNear;
+        tNear = tFar;
+        tFar = swap;
+      }
+
+      if (tNear > tMin) {
+        tMin = tNear;
+      }
+      tMax = Math.min(tMax, tFar);
+      if (tMin > tMax) {
+        return Optional.empty();
+      }
     }
-    return new Vec3(0.0D, 0.0D, Math.signum(localHit.z));
+
+    double t = tMin >= 0.0D ? tMin : tMax;
+    if (t < 0.0D) {
+      return Optional.empty();
+    }
+
+    Vec3 point = clampToBoxSurface(origin.add(direction.scale(t)), halfSize);
+    Vec3 outwardNormal = entryFaceNormal(point, direction, halfSize);
+    return Optional.of(new LocalSurfaceHit(point, outwardNormal));
+  }
+
+  private static Vec3 clampToBoxSurface(Vec3 point, double halfSize) {
+    double x = Math.clamp(point.x, -halfSize, halfSize);
+    double y = Math.clamp(point.y, -halfSize, halfSize);
+    double z = Math.clamp(point.z, -halfSize, halfSize);
+    if (Math.abs(x) < halfSize - FACE_EPSILON
+        && Math.abs(y) < halfSize - FACE_EPSILON
+        && Math.abs(z) < halfSize - FACE_EPSILON) {
+      double absX = Math.abs(x);
+      double absY = Math.abs(y);
+      double absZ = Math.abs(z);
+      if (absX >= absY && absX >= absZ) {
+        x = Math.copySign(halfSize, x != 0.0D ? x : 1.0D);
+      } else if (absY >= absZ) {
+        y = Math.copySign(halfSize, y != 0.0D ? y : 1.0D);
+      } else {
+        z = Math.copySign(halfSize, z != 0.0D ? z : 1.0D);
+      }
+    }
+
+    return new Vec3(x, y, z);
+  }
+
+  private static Vec3 entryFaceNormal(Vec3 hit, Vec3 direction, double halfSize) {
+    int bestAxis = -1;
+    double bestAlignment = 0.0D;
+
+    for (int axis = 0; axis < 3; axis++) {
+      double coordinate = axisComponent(hit, axis);
+      if (Math.abs(Math.abs(coordinate) - halfSize) > FACE_EPSILON) {
+        continue;
+      }
+
+      Vec3 outwardNormal = faceNormalForAxis(axis, coordinate > 0.0D);
+      double alignment = outwardNormal.dot(direction);
+      if (bestAxis < 0 || alignment < bestAlignment) {
+        bestAxis = axis;
+        bestAlignment = alignment;
+      }
+    }
+
+    if (bestAxis < 0) {
+      return new Vec3(0.0D, 1.0D, 0.0D);
+    }
+
+    return faceNormalForAxis(bestAxis, axisComponent(hit, bestAxis) > 0.0D);
+  }
+
+  private static Vec3 faceNormalForAxis(int axis, boolean positiveFace) {
+    double normalComponent = positiveFace ? 1.0D : -1.0D;
+    return switch (axis) {
+      case 0 -> new Vec3(normalComponent, 0.0D, 0.0D);
+      case 1 -> new Vec3(0.0D, normalComponent, 0.0D);
+      default -> new Vec3(0.0D, 0.0D, normalComponent);
+    };
+  }
+
+  private static double axisComponent(Vec3 vector, int axis) {
+    return switch (axis) {
+      case 0 -> vector.x;
+      case 1 -> vector.y;
+      default -> vector.z;
+    };
   }
 
   private static Vec3 toLocalPoint(Vec3 worldPoint, Vec3 center, Quaternionf orientation) {
@@ -99,42 +258,5 @@ public final class RigidBodyCollisionModel {
             (float) localDirection.x, (float) localDirection.y, (float) localDirection.z);
     orientation.transform(world);
     return new Vec3(world.x, world.y, world.z);
-  }
-
-  private static Optional<Vec3> intersectRayCube(Vec3 origin, Vec3 direction, double halfSize) {
-    double tMin = Double.NEGATIVE_INFINITY;
-    double tMax = Double.POSITIVE_INFINITY;
-    double[] originComponents = {origin.x, origin.y, origin.z};
-    double[] directionComponents = {direction.x, direction.y, direction.z};
-
-    for (int axis = 0; axis < 3; axis++) {
-      if (Math.abs(directionComponents[axis]) < 1.0E-8D) {
-        if (originComponents[axis] < -halfSize || originComponents[axis] > halfSize) {
-          return Optional.empty();
-        }
-        continue;
-      }
-
-      double tNear = (-halfSize - originComponents[axis]) / directionComponents[axis];
-      double tFar = (halfSize - originComponents[axis]) / directionComponents[axis];
-      if (tNear > tFar) {
-        double swap = tNear;
-        tNear = tFar;
-        tFar = swap;
-      }
-
-      tMin = Math.max(tMin, tNear);
-      tMax = Math.min(tMax, tFar);
-      if (tMin > tMax) {
-        return Optional.empty();
-      }
-    }
-
-    double t = tMin >= 0.0D ? tMin : tMax;
-    if (t < 0.0D) {
-      return Optional.empty();
-    }
-
-    return Optional.of(origin.add(direction.scale(t)));
   }
 }
