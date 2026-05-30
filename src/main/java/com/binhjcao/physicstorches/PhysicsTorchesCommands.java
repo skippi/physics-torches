@@ -85,18 +85,13 @@ public final class PhysicsTorchesCommands {
   private static void runTestRot(ServerPlayer player) {
     spawnCubesInFrontOf(
         player,
-        new EntityRigidBody.SpinAxis[] {EntityRigidBody.SpinAxis.X},
-        new EntityRigidBody.SpinAxis[] {EntityRigidBody.SpinAxis.Y},
-        new EntityRigidBody.SpinAxis[] {EntityRigidBody.SpinAxis.Z});
+        new Vec3(1.0D, 0.0D, 0.0D),
+        new Vec3(0.0D, 1.0D, 0.0D),
+        new Vec3(0.0D, 0.0D, 1.0D));
   }
 
   private static void runTestQuaternion(ServerPlayer player) {
-    EntityRigidBody.SpinAxis[] allAxes =
-        new EntityRigidBody.SpinAxis[] {
-          EntityRigidBody.SpinAxis.X,
-          EntityRigidBody.SpinAxis.Y,
-          EntityRigidBody.SpinAxis.Z
-        };
+    Vec3 tumbleAxis = new Vec3(1.0D, 1.0D, 1.0D);
     spawnCubesInFrontOf(
         player,
         new Quaternionf[] {
@@ -104,9 +99,9 @@ public final class PhysicsTorchesCommands {
           new Quaternionf().rotateY((float) Math.toRadians(45)),
           new Quaternionf().rotateZ((float) Math.toRadians(45))
         },
-        allAxes,
-        allAxes,
-        allAxes);
+        tumbleAxis,
+        tumbleAxis,
+        tumbleAxis);
   }
 
   private static void runTestTorque(ServerPlayer player) {
@@ -115,16 +110,15 @@ public final class PhysicsTorchesCommands {
 
   private static Vec3 cubePositionInFrontOf(ServerPlayer player) {
     EntityRigidBody.PlayerLookRay ray = EntityRigidBody.PlayerLookRay.from(player, 1.0F);
-    Vec3 center = ray.origin().add(ray.normalizedDirection().scale(2.0D));
-    return center.subtract(0.0D, EntityRigidBody.HALF_SIZE, 0.0D);
+    return ray.origin().add(ray.normalizedDirection().scale(2.0D));
   }
 
-  private static void spawnCubesInFrontOf(ServerPlayer player, EntityRigidBody.SpinAxis[]... spinAxes) {
-    spawnCubesInFrontOf(player, null, spinAxes);
+  private static void spawnCubesInFrontOf(ServerPlayer player, Vec3... bodyAxes) {
+    spawnCubesInFrontOf(player, null, bodyAxes);
   }
 
   private static void spawnCubesInFrontOf(
-      ServerPlayer player, Quaternionf[] initialOrientations, EntityRigidBody.SpinAxis[]... spinAxes) {
+      ServerPlayer player, Quaternionf[] initialOrientations, Vec3... bodyAxes) {
     EntityRigidBody.PlayerLookRay ray = EntityRigidBody.PlayerLookRay.from(player, 1.0F);
     Vec3 forward = ray.normalizedDirection();
     Vec3 right = forward.cross(new Vec3(0.0D, 1.0D, 0.0D));
@@ -138,14 +132,14 @@ public final class PhysicsTorchesCommands {
     double spacing = 2.0D;
     Vec3[] offsets = {right.scale(-spacing), Vec3.ZERO, right.scale(spacing)};
 
-    for (int i = 0; i < spinAxes.length; i++) {
-      Vec3 position = center.add(offsets[i]).subtract(0.0D, EntityRigidBody.HALF_SIZE, 0.0D);
+    for (int i = 0; i < bodyAxes.length; i++) {
+      Vec3 position = center.add(offsets[i]);
       Quaternionf initialOrientation =
           initialOrientations != null ? initialOrientations[i] : null;
-      player
-          .level()
-          .addFreshEntity(
-              new EntityRigidBody(player.level(), position, initialOrientation, spinAxes[i]));
+      EntityRigidBody body = new EntityRigidBody(player.level(), position, initialOrientation);
+      body.gravityScale(0);
+      body.angularVelocity(bodyAxes[i].scale(2.5D));
+      player.level().addFreshEntity(body);
     }
   }
 }

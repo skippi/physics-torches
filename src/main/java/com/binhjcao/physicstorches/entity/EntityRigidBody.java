@@ -15,6 +15,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.Optional;
 
@@ -39,22 +40,7 @@ public class EntityRigidBody extends Entity {
   }
 
   private static final RigidBodyCollisionModel COLLISION = RigidBodyCollisionModel.cube(HALF_SIZE);
-  private static final double SPIN_SPEED = 2.5D;
-  private static final float TICK_DT = 0.05F;
-
-  public enum SpinAxis {
-    X,
-    Y,
-    Z;
-
-    void rotate(Quaternionf orientation, float angle) {
-      switch (this) {
-        case X -> orientation.rotateX(angle);
-        case Y -> orientation.rotateY(angle);
-        case Z -> orientation.rotateZ(angle);
-      }
-    }
-  }
+  public static final double GRAVITY = 9.81D;
 
   private static final EntityDataAccessor<Float> DATA_ORIENT_X =
       SynchedEntityData.defineId(EntityRigidBody.class, EntityDataSerializers.FLOAT);
@@ -67,7 +53,18 @@ public class EntityRigidBody extends Entity {
 
   private final Quaternionf orientation = new Quaternionf();
   private final Quaternionf prevOrientation = new Quaternionf();
-  private SpinAxis[] spinAxes = new SpinAxis[0];
+
+  private double mass = 1.0D;
+  private double linearDamp = 0.0D;
+  private double angularDamp = 0.0D;
+  private double gravityScale = 1.0D;
+  private double sleepThreshold = 0.005D;
+  private Vec3 angularVelocity = Vec3.ZERO;
+  private Vec3 linearVelocity = Vec3.ZERO;
+  private Vec3 constantForce = Vec3.ZERO;
+  private Vec3 constantTorque = Vec3.ZERO;
+  private Vec3 inertia = Vec3.ZERO;
+  private boolean sleeping = false;
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
     super(type, level);
@@ -76,30 +73,20 @@ public class EntityRigidBody extends Entity {
     prevOrientation.identity();
   }
 
-  public EntityRigidBody(Level level, Vec3 position, SpinAxis... spinAxes) {
-    this(level, position, null, spinAxes);
+  public EntityRigidBody(Level level, Vec3 position) {
+    this(level, position, null);
   }
 
-  public EntityRigidBody(
-      Level level, Vec3 position, Quaternionf initialOrientation, SpinAxis... spinAxes) {
-    this(PhysicsTorchesEntities.RIGID_BODY_CUBE, level);
-    this.spinAxes = spinAxes;
-    if (initialOrientation != null) {
-      orientation.set(initialOrientation);
-      prevOrientation.set(initialOrientation);
-    }
-    setPos(position.x, position.y, position.z);
-    syncOrientationData();
+  public EntityRigidBody(Level level, Vec3 position, Quaternionf initialOrientation) {
+    this(PhysicsTorchesEntities.RIGID_BODY_CUBE, level, position, initialOrientation);
   }
 
   public EntityRigidBody(
       EntityType<? extends EntityRigidBody> type,
       Level level,
       Vec3 position,
-      Quaternionf initialOrientation,
-      SpinAxis... spinAxes) {
+      Quaternionf initialOrientation) {
     this(type, level);
-    this.spinAxes = spinAxes;
     if (initialOrientation != null) {
       orientation.set(initialOrientation);
       prevOrientation.set(initialOrientation);
@@ -108,8 +95,93 @@ public class EntityRigidBody extends Entity {
     syncOrientationData();
   }
 
-  public Vec3 getCollisionCenter() {
-    return new Vec3(getX(), getY() + HALF_SIZE, getZ());
+  public double mass() {
+    return mass;
+  }
+
+  public void mass(double mass) {
+    this.mass = Math.max(1.0E-4D, mass);
+    inertia = cubeInertia(this.mass, HALF_SIZE);
+  }
+
+  public double linearDamp() {
+    return linearDamp;
+  }
+
+  public void linearDamp(double linearDamp) {
+    this.linearDamp = Math.clamp(linearDamp, 0.0D, 1.0D);
+  }
+
+  public double angularDamp() {
+    return angularDamp;
+  }
+
+  public void angularDamp(double angularDamp) {
+    this.angularDamp = Math.clamp(angularDamp, 0.0D, 1.0D);
+  }
+
+  public Vec3 angularVelocity() {
+    return angularVelocity;
+  }
+
+  public void angularVelocity(Vec3 angularVelocity) {
+    this.angularVelocity = angularVelocity;
+  }
+
+  public Vec3 constantForce() {
+    return constantForce;
+  }
+
+  public void constantForce(Vec3 constantForce) {
+    this.constantForce = constantForce;
+  }
+
+  public Vec3 constantTorque() {
+    return constantTorque;
+  }
+
+  public void constantTorque(Vec3 constantTorque) {
+    this.constantTorque = constantTorque;
+  }
+
+  public double gravityScale() {
+    return gravityScale;
+  }
+
+  public void gravityScale(double gravityScale) {
+    this.gravityScale = Math.clamp(gravityScale, 0.0D, 1.0D);
+  }
+
+  public Vec3 linearVelocity() {
+    return linearVelocity;
+  }
+
+  public void linearVelocity(Vec3 linearVelocity) {
+    this.linearVelocity = linearVelocity;
+  }
+
+  public double sleepThreshold() {
+    return sleepThreshold;
+  }
+
+  public void sleepThreshold(double sleepThreshold) {
+    this.sleepThreshold = Math.clamp(sleepThreshold, 0.0D, 1.0D);
+  }
+
+  public Vec3 inertia() {
+    return inertia;
+  }
+
+  public void inertia(Vec3 inertia) {
+    this.inertia =
+        new Vec3(
+            Math.max(1.0E-8D, inertia.x),
+            Math.max(1.0E-8D, inertia.y),
+            Math.max(1.0E-8D, inertia.z));
+  }
+
+  protected boolean sleeping() {
+    return sleeping;
   }
 
   public RigidBodyCollisionModel collisionModel() {
@@ -134,7 +206,7 @@ public class EntityRigidBody extends Entity {
       double surfaceTolerance) {
     return COLLISION.raycast(
         getOrientation(partialTick),
-        getCollisionCenter(),
+        position(),
         rayOrigin,
         rayDirection,
         maxReach,
@@ -208,9 +280,11 @@ public class EntityRigidBody extends Entity {
           entityData.get(DATA_ORIENT_Z),
           entityData.get(DATA_ORIENT_W));
     } else {
-      applyConstantSpin();
-      applyPhysics();
+      applyConstantForces();
+      integrateAngularVelocity();
+      integrateLinearVelocity();
       syncOrientationData();
+      updateSleepState();
     }
 
     refreshOrientedBoundingBox();
@@ -219,20 +293,139 @@ public class EntityRigidBody extends Entity {
 
   private void refreshOrientedBoundingBox() {
     setBoundingBox(
-        COLLISION.orientedBounds(getCollisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
+        COLLISION.orientedBounds(position(), getOrientation(1.0F), PICK_BBOX_INFLATE));
   }
 
-  protected void applyConstantSpin() {
-    float angle = (float) (SPIN_SPEED * TICK_DT);
-    for (SpinAxis spinAxis : spinAxes) {
-      spinAxis.rotate(orientation, angle);
+  protected void applyConstantForces() {
+    if (sleeping) {
+      return;
+    }
+
+    applyGravity();
+
+    if (constantForce.lengthSqr() > 1.0E-8D) {
+      applyForce(constantForce);
+    }
+
+    if (constantTorque.lengthSqr() > 1.0E-8D) {
+      applyTorque(constantTorque);
     }
   }
 
-  protected void applyPhysics() {}
+  protected void applyGravity() {
+    if (gravityScale <= 1.0E-8D) {
+      return;
+    }
 
-  protected void rotateAroundWorldAxis(Vec3 axis, float angle) {
-    orientation.rotateAxis(angle, (float) axis.x, (float) axis.y, (float) axis.z);
+    Vec3 gravityForce = new Vec3(0.0D, -mass * GRAVITY * gravityScale, 0.0D);
+    applyForce(gravityForce);
+  }
+
+  public void applyForce(Vec3 force) {
+    applyForce(force, Vec3.ZERO);
+  }
+
+  public void applyForce(Vec3 force, Vec3 position) {
+    wake();
+    linearVelocity = linearVelocity.add(force.scale(physicsDt() / mass));
+    if (position.lengthSqr() > 1.0E-8D) {
+      applyTorque(position.cross(force));
+    }
+  }
+
+  public void applyImpulse(Vec3 impulse) {
+    applyImpulse(impulse, Vec3.ZERO);
+  }
+
+  public void applyImpulse(Vec3 impulse, Vec3 position) {
+    wake();
+    linearVelocity = linearVelocity.add(impulse.scale(1.0D / mass));
+    if (position.lengthSqr() > 1.0E-8D) {
+      applyTorqueImpulse(position.cross(impulse));
+    }
+  }
+
+  public void applyTorque(Vec3 torque) {
+    wake();
+    Vec3 torqueBody = toBodyDirection(torque);
+    angularVelocity = angularVelocity.add(divideByInertia(torqueBody).scale(physicsDt()));
+  }
+
+  public void applyTorqueImpulse(Vec3 impulse) {
+    wake();
+    Vec3 impulseBody = toBodyDirection(impulse);
+    angularVelocity = angularVelocity.add(divideByInertia(impulseBody));
+  }
+
+  protected void integrateAngularVelocity() {
+    if (angularVelocity.lengthSqr() <= 1.0E-8D) {
+      return;
+    }
+
+    double dt = physicsDt();
+    orientation.rotateX((float) (angularVelocity.x * dt));
+    orientation.rotateY((float) (angularVelocity.y * dt));
+    orientation.rotateZ((float) (angularVelocity.z * dt));
+    orientation.normalize();
+    angularVelocity = angularVelocity.scale(1.0D - angularDamp * physicsDt());
+  }
+
+  protected void integrateLinearVelocity() {
+    if (linearVelocity.lengthSqr() <= 1.0E-8D) {
+      return;
+    }
+
+    Vec3 next = position().add(linearVelocity);
+    setPos(next.x, next.y, next.z);
+    linearVelocity = linearVelocity.scale(1.0D - linearDamp * physicsDt());
+  }
+
+  protected double physicsDt() {
+    return 1.0D / level().tickRateManager().tickrate();
+  }
+
+  protected void wake() {
+    sleeping = false;
+  }
+
+  protected void updateSleepState() {
+    if (sleepThreshold <= 1.0E-8D) {
+      return;
+    }
+
+    if (specificKineticEnergy(linearVelocity, angularVelocity) < sleepThreshold) {
+      sleeping = true;
+      linearVelocity = Vec3.ZERO;
+      angularVelocity = Vec3.ZERO;
+    }
+  }
+
+  protected double specificKineticEnergy(Vec3 linearVelocity, Vec3 angularVelocity) {
+    double linearEnergy = 0.5D * linearVelocity.lengthSqr();
+    double angularEnergy =
+        0.5D
+            * (inertia.x * angularVelocity.x * angularVelocity.x
+                + inertia.y * angularVelocity.y * angularVelocity.y
+                + inertia.z * angularVelocity.z * angularVelocity.z);
+    return (linearEnergy + angularEnergy) / mass;
+  }
+
+  public static Vec3 cubeInertia(double mass, double halfSize) {
+    double edgeLength = halfSize * 2.0D;
+    double component = (mass / 12.0D) * (edgeLength * edgeLength + edgeLength * edgeLength);
+    return new Vec3(component, component, component);
+  }
+
+  protected Vec3 toBodyDirection(Vec3 worldDirection) {
+    Vector3f local =
+        new Vector3f(
+            (float) worldDirection.x, (float) worldDirection.y, (float) worldDirection.z);
+    new Quaternionf(orientation).invert().transform(local);
+    return new Vec3(local.x, local.y, local.z);
+  }
+
+  protected Vec3 divideByInertia(Vec3 vector) {
+    return new Vec3(vector.x / inertia.x, vector.y / inertia.y, vector.z / inertia.z);
   }
 
   protected void syncOrientationData() {

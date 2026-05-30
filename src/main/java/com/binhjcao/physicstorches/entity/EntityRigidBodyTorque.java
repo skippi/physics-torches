@@ -15,7 +15,6 @@ import net.minecraft.world.phys.Vec3;
 public class EntityRigidBodyTorque extends EntityRigidBody {
   private static final double IMPULSE_STRENGTH = 3.0D;
   private static final double TORQUE_SCALE = 0.35D;
-  private static final double ANGULAR_DAMPING = 0.985D;
   private static final int DEBUG_IMPULSE_TICKS = 40;
 
   private static final EntityDataAccessor<Integer> DATA_DEBUG_IMPULSE_AGE =
@@ -33,7 +32,6 @@ public class EntityRigidBodyTorque extends EntityRigidBody {
   private static final EntityDataAccessor<Float> DATA_DEBUG_FORCE_Z =
       SynchedEntityData.defineId(EntityRigidBodyTorque.class, EntityDataSerializers.FLOAT);
 
-  private Vec3 angularVelocity = Vec3.ZERO;
   private int lastImpulseTick = -1;
 
   public EntityRigidBodyTorque(EntityType<? extends EntityRigidBodyTorque> type, Level level) {
@@ -116,18 +114,6 @@ public class EntityRigidBodyTorque extends EntityRigidBody {
     return false;
   }
 
-  @Override
-  protected void applyPhysics() {
-    if (angularVelocity.lengthSqr() <= 1.0E-8D) {
-      return;
-    }
-
-    double speed = angularVelocity.length();
-    Vec3 axis = angularVelocity.scale(1.0D / speed);
-    rotateAroundWorldAxis(axis, (float) speed);
-    angularVelocity = angularVelocity.scale(ANGULAR_DAMPING);
-  }
-
   private boolean applyImpulseFromPlayer(ServerPlayer player) {
     if (tickCount == lastImpulseTick) {
       return true;
@@ -146,8 +132,8 @@ public class EntityRigidBodyTorque extends EntityRigidBody {
     RigidBodyCollisionModel.SurfaceHit surfaceHit = hit.get();
     Vec3 hitPoint = surfaceHit.worldPoint();
     Vec3 force = surfaceHit.inwardNormal().scale(IMPULSE_STRENGTH);
-    Vec3 leverArm = hitPoint.subtract(getCollisionCenter());
-    angularVelocity = angularVelocity.add(leverArm.cross(force).scale(TORQUE_SCALE));
+    Vec3 leverArm = hitPoint.subtract(position());
+    applyTorqueImpulse(leverArm.cross(force).scale(TORQUE_SCALE));
     lastImpulseTick = tickCount;
     recordDebugImpulse(hitPoint, force);
     return true;

@@ -58,10 +58,8 @@ public class EntityRigidBodyRenderer
     }
 
     poseStack.pushPose();
-    poseStack.translate(-0.5D, 0.0D, -0.5D);
-    poseStack.translate(0.5D, EntityRigidBody.HALF_SIZE, 0.5D);
     poseStack.mulPose(state.orientation);
-    poseStack.translate(-0.5D, -EntityRigidBody.HALF_SIZE, -0.5D);
+    poseStack.translate(-0.5D, -0.5D, -0.5D);
     queue.submitMovingBlock(poseStack, state.movingBlockRenderState);
     poseStack.popPose();
     super.submit(state, poseStack, queue, cameraState);
