@@ -2,6 +2,7 @@ package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.entity.EntityPhysicsTorch;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.binhjcao.physicstorches.entity.EntityRigidBodyLinear;
 import com.binhjcao.physicstorches.entity.EntityRigidBodyTorque;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -48,10 +49,23 @@ public final class PhysicsTorchesEntities {
           .updateInterval(1)
           .build(RIGID_BODY_TORQUE_KEY);
 
+  private static final ResourceKey<EntityType<?>> RIGID_BODY_LINEAR_KEY =
+      ResourceKey.create(
+          Registries.ENTITY_TYPE,
+          Identifier.fromNamespaceAndPath(PhysicsTorchesMod.MOD_ID, "rigid_body_linear"));
+
+  public static final EntityType<EntityRigidBodyLinear> RIGID_BODY_LINEAR =
+      EntityType.Builder.<EntityRigidBodyLinear>of(EntityRigidBodyLinear::new, MobCategory.MISC)
+          .sized((float) (EntityRigidBody.HALF_SIZE * 2F), (float) (EntityRigidBody.HALF_SIZE * 2F))
+          .clientTrackingRange(64)
+          .updateInterval(1)
+          .build(RIGID_BODY_LINEAR_KEY);
+
   static void register() {
     Registry.register(BuiltInRegistries.ENTITY_TYPE, PHYSICS_TORCH_KEY, PHYSICS_TORCH);
     Registry.register(BuiltInRegistries.ENTITY_TYPE, RIGID_BODY_CUBE_KEY, RIGID_BODY_CUBE);
     Registry.register(BuiltInRegistries.ENTITY_TYPE, RIGID_BODY_TORQUE_KEY, RIGID_BODY_TORQUE);
+    Registry.register(BuiltInRegistries.ENTITY_TYPE, RIGID_BODY_LINEAR_KEY, RIGID_BODY_LINEAR);
   }
 
   private PhysicsTorchesEntities() {}

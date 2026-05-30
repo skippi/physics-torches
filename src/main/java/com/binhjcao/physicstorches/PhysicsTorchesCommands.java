@@ -1,6 +1,7 @@
 package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.binhjcao.physicstorches.entity.EntityRigidBodyLinear;
 import com.binhjcao.physicstorches.entity.EntityRigidBodyTorque;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -29,6 +30,7 @@ public final class PhysicsTorchesCommands {
     registerTest("physicstorches:test_rot", PhysicsTorchesCommands::runTestRot);
     registerTest("physicstorches:test_quaternion", PhysicsTorchesCommands::runTestQuaternion);
     registerTest("physicstorches:test_torque", PhysicsTorchesCommands::runTestTorque);
+    registerTest("physicstorches:test_linear", PhysicsTorchesCommands::runTestLinear);
   }
 
   private PhysicsTorchesCommands() {}
@@ -106,6 +108,12 @@ public final class PhysicsTorchesCommands {
 
   private static void runTestTorque(ServerPlayer player) {
     player.level().addFreshEntity(new EntityRigidBodyTorque(player.level(), cubePositionInFrontOf(player)));
+  }
+
+  private static void runTestLinear(ServerPlayer player) {
+    player
+        .level()
+        .addFreshEntity(new EntityRigidBodyLinear(player.level(), cubePositionInFrontOf(player)));
   }
 
   private static Vec3 cubePositionInFrontOf(ServerPlayer player) {
