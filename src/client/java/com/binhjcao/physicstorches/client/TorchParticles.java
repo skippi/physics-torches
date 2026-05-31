@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches.client;
 
-import com.binhjcao.physicstorches.entity.EntityPhysicsTorch;
+import com.binhjcao.physicstorches.entity.EntityTorchRigidBody;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Direction;
@@ -15,7 +15,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 import org.joml.Vector3f;
 
-public final class PhysicsTorchParticles {
+public final class TorchParticles {
   private static final float FLAME_HEIGHT = 0.7F;
   private static final float WALL_FLAME_OFFSET = 0.27F;
   private static final int SPAWN_CHANCE = 40;
@@ -25,7 +25,7 @@ public final class PhysicsTorchParticles {
   private static ClientLevel lastLevel;
   private static long lastParticleGameTime = -1L;
 
-  private PhysicsTorchParticles() {}
+  private TorchParticles() {}
 
   public static void tick(ClientLevel level, Minecraft client) {
     if (client.isPaused() || client.player == null) {
@@ -44,7 +44,7 @@ public final class PhysicsTorchParticles {
     lastParticleGameTime = gameTime;
 
     AABB search = client.player.getBoundingBox().inflate(48.0D);
-    for (EntityPhysicsTorch torch : level.getEntitiesOfClass(EntityPhysicsTorch.class, search)) {
+    for (EntityTorchRigidBody torch : level.getEntitiesOfClass(EntityTorchRigidBody.class, search)) {
       BlockState blockState = torch.getBlockState();
       if (!shouldSpawn(blockState)) {
         continue;

@@ -12,14 +12,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
 
-final class PhysicsTorchLight {
+final class TorchLight {
   private record Cell(BlockState original, int refs, int level) {}
 
   private static final Map<ServerLevel, Map<BlockPos, Cell>> CELLS = new WeakHashMap<>();
 
-  private PhysicsTorchLight() {}
+  private TorchLight() {}
 
-  static int luminance(EntityPhysicsTorch torch) {
+  static int luminance(EntityTorchRigidBody torch) {
     if (torch.isInWater()) {
       return 0;
     }
@@ -32,7 +32,7 @@ final class PhysicsTorchLight {
     return state.getLightEmission();
   }
 
-  static void update(EntityPhysicsTorch torch) {
+  static void update(EntityTorchRigidBody torch) {
     if (torch.level().isClientSide()) {
       return;
     }
@@ -57,7 +57,7 @@ final class PhysicsTorchLight {
     attach(torch, target, luminance);
   }
 
-  static void clear(EntityPhysicsTorch torch) {
+  static void clear(EntityTorchRigidBody torch) {
     BlockPos pos = torch.lightBlockPos();
     if (pos == null || torch.level().isClientSide()) {
       torch.setLightBlockPos(null);
@@ -87,7 +87,7 @@ final class PhysicsTorchLight {
     torch.setLightBlockPos(null);
   }
 
-  private static void attach(EntityPhysicsTorch torch, BlockPos target, int luminance) {
+  private static void attach(EntityTorchRigidBody torch, BlockPos target, int luminance) {
     ServerLevel level = (ServerLevel) torch.level();
     BlockState current = level.getBlockState(target);
     if (!canReplace(current)) {
@@ -126,7 +126,7 @@ final class PhysicsTorchLight {
     cells(level).put(target, new Cell(cell.original, cell.refs, luminance));
   }
 
-  private static BlockPos lightPos(EntityPhysicsTorch torch) {
+  private static BlockPos lightPos(EntityTorchRigidBody torch) {
     return BlockPos.containing(torch.getX(), torch.getY(), torch.getZ());
   }
 

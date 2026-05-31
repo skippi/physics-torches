@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches;
 
-import com.binhjcao.physicstorches.entity.EntityPhysicsTorch;
+import com.binhjcao.physicstorches.entity.EntityTorchRigidBody;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -34,7 +34,7 @@ public class PhysicsTorchesMod implements ModInitializer {
   static void throwHeldTorch(ServerPlayer player) {
     for (InteractionHand hand : InteractionHand.values()) {
       ItemStack stack = player.getItemInHand(hand);
-      if (isTorch(stack) && EntityPhysicsTorch.throwFromPlayer(player, stack, hand)) {
+      if (isTorch(stack) && EntityTorchRigidBody.throwFromPlayer(player, stack, hand)) {
         return;
       }
     }
