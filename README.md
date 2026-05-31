@@ -4,7 +4,7 @@ Minecraft mod that lets you throw your torches like an actual object.
 
 ## Usage
 
-Hold a torch and press **Left Alt + right click** to drop it.
+Hold a torch and press **R** to throw it. Rebind the key in **Options → Controls** under **Physics Torches**.
 
 ## Install
 
