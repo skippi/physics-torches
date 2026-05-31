@@ -62,7 +62,7 @@ public class EntityRigidBody extends Entity {
     }
   }
 
-  private static final RigidBodyCollisionModel COLLISION = RigidBodyCollisionModel.cube(HALF_SIZE);
+  private final RigidBodyCollisionModel collisionModel;
   public static final double GRAVITY = 9.81D; // m/s²
   private static final double BLOCK_FRICTION = 1.0D;
 
@@ -101,9 +101,22 @@ public class EntityRigidBody extends Entity {
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
     super(type, level);
+    collisionModel = createCollisionModel();
     setNoGravity(true);
     orientation.identity();
     prevOrientation.identity();
+  }
+
+  protected RigidBodyCollisionModel createCollisionModel() {
+    return RigidBodyCollisionModel.cube(HALF_SIZE);
+  }
+
+  protected Vec3 collisionCenter() {
+    return position();
+  }
+
+  protected void setCollisionCenter(Vec3 center) {
+    setPos(center);
   }
 
   public EntityRigidBody(Level level, Vec3 position) {
@@ -241,7 +254,8 @@ public class EntityRigidBody extends Entity {
   }
 
   public Vec3 inertia() {
-    return cubeInertia(mass(), HALF_SIZE);
+    Vec3 halfExtents = collisionModel.halfExtents();
+    return boxInertia(mass(), halfExtents.x, halfExtents.y, halfExtents.z);
   }
 
   public boolean linearLock() {
@@ -265,7 +279,7 @@ public class EntityRigidBody extends Entity {
   }
 
   public RigidBodyCollisionModel collisionModel() {
-    return COLLISION;
+    return collisionModel;
   }
 
   public Optional<RigidBodyCollisionModel.SurfaceHit> raycastSurface(
@@ -284,9 +298,9 @@ public class EntityRigidBody extends Entity {
       float partialTick,
       double maxReach,
       double surfaceTolerance) {
-    return COLLISION.raycast(
+    return collisionModel.raycast(
         getOrientation(partialTick),
-        position(),
+        collisionCenter(),
         rayOrigin,
         rayDirection,
         maxReach,
@@ -477,7 +491,7 @@ public class EntityRigidBody extends Entity {
 
   private void refreshOrientedBoundingBox() {
     setBoundingBox(
-        COLLISION.orientedBounds(position(), getOrientation(1.0F), PICK_BBOX_INFLATE));
+        collisionModel.orientedBounds(collisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
   }
 
   protected void applyConstantForces() {
@@ -517,7 +531,7 @@ public class EntityRigidBody extends Entity {
     }
 
     Vec3 pivot = averagePoint(supportPoints);
-    Vec3 leverArm = position().subtract(pivot);
+    Vec3 leverArm = collisionCenter().subtract(pivot);
     applyTorque(leverArm.cross(gravityForce));
   }
 
@@ -589,7 +603,7 @@ public class EntityRigidBody extends Entity {
       recovery = recoverFromPenetration(testOnly, safeMargin, maxCollisions);
     }
 
-    Vec3 startPos = position();
+    Vec3 startPos = collisionCenter();
     if (motion.lengthSqr() <= 1.0E-12D) {
       if (recoveryAsCollision && recovery != null) {
         return recovery;
@@ -599,9 +613,11 @@ public class EntityRigidBody extends Entity {
 
     refreshOrientedBoundingBox();
     AABB sweepBounds =
-        COLLISION
+        collisionModel
             .orientedBounds(startPos, orientation, PICK_BBOX_INFLATE)
-            .minmax(COLLISION.orientedBounds(startPos.add(motion), orientation, PICK_BBOX_INFLATE));
+            .minmax(
+                collisionModel.orientedBounds(
+                    startPos.add(motion), orientation, PICK_BBOX_INFLATE));
 
     CastHit earliest = null;
     for (AABB block : collectBlockAABBs(sweepBounds)) {
@@ -617,10 +633,10 @@ public class EntityRigidBody extends Entity {
       Vec3 remainder = motion.subtract(travel);
 
       if (!testOnly) {
-        setPos(hitCenter.add(earliest.normal().scale(safeMargin)));
+        setCollisionCenter(hitCenter.add(earliest.normal().scale(safeMargin)));
       }
 
-      Vec3 leverArm = earliest.contactPoint().subtract(position());
+      Vec3 leverArm = earliest.contactPoint().subtract(collisionCenter());
       MoveAndCollideResult result =
           new MoveAndCollideResult(
               earliest.contactPoint(),
@@ -639,7 +655,7 @@ public class EntityRigidBody extends Entity {
     }
 
     if (!testOnly) {
-      setPos(startPos.add(motion));
+      setCollisionCenter(startPos.add(motion));
     }
 
     if (recoveryAsCollision && recovery != null) {
@@ -684,7 +700,7 @@ public class EntityRigidBody extends Entity {
   private boolean isPenetrating() {
     refreshOrientedBoundingBox();
     for (AABB block : collectBlockAABBs(getBoundingBox())) {
-      SATResult sat = satOBBvsAABB(position(), block);
+      SATResult sat = satOBBvsAABB(collisionCenter(), block);
       if (sat != null && sat.depth() > contactMaxAllowedPenetration()) {
         return true;
       }
@@ -700,17 +716,21 @@ public class EntityRigidBody extends Entity {
     return blocks;
   }
 
-  private boolean isStableSupport() {
+  protected int minimumStableSupportPoints() {
+    return 3;
+  }
+
+  protected boolean isStableSupport() {
     List<Vec3> supportPoints = findGroundSupportPoints();
-    if (supportPoints.isEmpty()) {
+    if (supportPoints.size() < minimumStableSupportPoints()) {
       return false;
     }
     return isComInsideSupportPolygon(supportPoints);
   }
 
-  private List<Vec3> findGroundSupportPoints() {
-    Vec3 center = position();
-    Vec3[] corners = COLLISION.worldCorners(center, orientation);
+  protected List<Vec3> findGroundSupportPoints() {
+    Vec3 center = collisionCenter();
+    Vec3[] corners = collisionModel.worldCorners(center, orientation);
     List<Vec3> supportPoints = new ArrayList<>();
     for (Vec3 corner : corners) {
       if (isCornerSupported(corner)) {
@@ -744,7 +764,7 @@ public class EntityRigidBody extends Entity {
   }
 
   private boolean isComInsideSupportPolygon(List<Vec3> supportPoints) {
-    Vec3 com = position();
+    Vec3 com = collisionCenter();
     if (supportPoints.size() == 1) {
       double dx = com.x - supportPoints.getFirst().x;
       double dz = com.z - supportPoints.getFirst().z;
@@ -833,7 +853,7 @@ public class EntityRigidBody extends Entity {
     int iterations = Math.min(Math.max(maxCollisions, 1), RECOVERY_ITERATIONS);
 
     for (int iteration = 0; iteration < iterations; iteration++) {
-      Vec3 center = position();
+      Vec3 center = collisionCenter();
       refreshOrientedBoundingBox();
       SATResult deepest = null;
       AABB deepestBlock = null;
@@ -858,7 +878,7 @@ public class EntityRigidBody extends Entity {
       Vec3 contact = findContactPoint(center, deepestBlock, deepest.normal());
       Vec3 separation = deepest.normal().scale(excessDepth + safeMargin);
       if (!testOnly) {
-        setPos(center.add(separation));
+        setCollisionCenter(center.add(separation));
       }
 
       deepestRecovery =
@@ -882,7 +902,7 @@ public class EntityRigidBody extends Entity {
     refreshOrientedBoundingBox();
     boolean overlapping = false;
     for (AABB block : collectBlockAABBs(getBoundingBox())) {
-      if (satOBBvsAABB(position(), block) != null) {
+      if (satOBBvsAABB(collisionCenter(), block) != null) {
         overlapping = true;
         break;
       }
@@ -906,7 +926,7 @@ public class EntityRigidBody extends Entity {
 
     refreshOrientedBoundingBox();
     for (AABB block : collectBlockAABBs(getBoundingBox())) {
-      SATResult sat = satOBBvsAABB(position(), block);
+      SATResult sat = satOBBvsAABB(collisionCenter(), block);
       if (sat == null) {
         continue;
       }
@@ -926,7 +946,7 @@ public class EntityRigidBody extends Entity {
     refreshOrientedBoundingBox();
     boolean floorFrictionApplied = false;
     for (AABB block : collectBlockAABBs(getBoundingBox())) {
-      SATResult sat = satOBBvsAABB(position(), block);
+      SATResult sat = satOBBvsAABB(collisionCenter(), block);
       if (sat == null) {
         continue;
       }
@@ -938,8 +958,8 @@ public class EntityRigidBody extends Entity {
         }
 
         if (!isStableSupport()) {
-          Vec3 contact = findContactPoint(position(), block, normal);
-          applyRotationalContactResponse(contact.subtract(position()), normal);
+          Vec3 contact = findContactPoint(collisionCenter(), block, normal);
+          applyRotationalContactResponse(contact.subtract(collisionCenter()), normal);
         }
 
         applyGodotComFriction(normal);
@@ -947,8 +967,8 @@ public class EntityRigidBody extends Entity {
         continue;
       }
 
-      Vec3 contact = findContactPoint(position(), block, normal);
-      Vec3 leverArm = contact.subtract(position());
+      Vec3 contact = findContactPoint(collisionCenter(), block, normal);
+      Vec3 leverArm = contact.subtract(collisionCenter());
       applyRotationalContactResponse(leverArm, normal);
       applyGodotPointFriction(leverArm, normal);
     }
@@ -1061,7 +1081,7 @@ public class EntityRigidBody extends Entity {
   }
 
   private Vec3 findContactPoint(Vec3 center, AABB block, Vec3 normal) {
-    Vec3[] corners = COLLISION.worldCorners(center, orientation);
+    Vec3[] corners = collisionModel.worldCorners(center, orientation);
     List<Vec3> contacts = new ArrayList<>();
     for (Vec3 corner : corners) {
       if (corner.x >= block.minX && corner.x <= block.maxX
@@ -1139,7 +1159,7 @@ public class EntityRigidBody extends Entity {
             (block.maxX - block.minX) * 0.5,
             (block.maxY - block.minY) * 0.5,
             (block.maxZ - block.minZ) * 0.5);
-    double hs = HALF_SIZE;
+    Vec3 halfExtents = collisionModel.halfExtents();
     Vec3 u0 = toWorldDirection(new Vec3(1, 0, 0));
     Vec3 u1 = toWorldDirection(new Vec3(0, 1, 0));
     Vec3 u2 = toWorldDirection(new Vec3(0, 0, 1));
@@ -1163,7 +1183,9 @@ public class EntityRigidBody extends Entity {
               + Math.abs(a.y) * blockHalf.y
               + Math.abs(a.z) * blockHalf.z;
       double obbR =
-          Math.abs(a.dot(u0)) * hs + Math.abs(a.dot(u1)) * hs + Math.abs(a.dot(u2)) * hs;
+          Math.abs(a.dot(u0)) * halfExtents.x
+              + Math.abs(a.dot(u1)) * halfExtents.y
+              + Math.abs(a.dot(u2)) * halfExtents.z;
       double blockProj = a.dot(blockCenter);
       double bodyProj = a.dot(center);
       double depth = blockR + obbR - Math.abs(bodyProj - blockProj);
@@ -1178,17 +1200,25 @@ public class EntityRigidBody extends Entity {
 
   private double maxPointVelocity() {
     double maxSpeed = 0.0D;
-    for (Vec3 corner : COLLISION.worldCorners(position(), orientation)) {
-      Vec3 r = corner.subtract(position());
+    for (Vec3 corner : collisionModel.worldCorners(collisionCenter(), orientation)) {
+      Vec3 r = corner.subtract(collisionCenter());
       maxSpeed = Math.max(maxSpeed, velocityAtPoint(r).length());
     }
     return maxSpeed;
   }
 
   public static Vec3 cubeInertia(double mass, double halfSize) {
-    double edgeLength = halfSize * 2.0D;
-    double component = (mass / 12.0D) * (edgeLength * edgeLength + edgeLength * edgeLength);
-    return new Vec3(component, component, component);
+    return boxInertia(mass, halfSize, halfSize, halfSize);
+  }
+
+  public static Vec3 boxInertia(double mass, double halfX, double halfY, double halfZ) {
+    double sizeX = halfX * 2.0D;
+    double sizeY = halfY * 2.0D;
+    double sizeZ = halfZ * 2.0D;
+    return new Vec3(
+        (mass / 12.0D) * (sizeY * sizeY + sizeZ * sizeZ),
+        (mass / 12.0D) * (sizeX * sizeX + sizeZ * sizeZ),
+        (mass / 12.0D) * (sizeX * sizeX + sizeY * sizeY));
   }
 
   protected Vec3 toBodyDirection(Vec3 worldDirection) {

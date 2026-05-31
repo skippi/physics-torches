@@ -127,7 +127,7 @@ final class PhysicsTorchLight {
   }
 
   private static BlockPos lightPos(EntityPhysicsTorch torch) {
-    return BlockPos.containing(torch.getX(), torch.getY() + EntityPhysicsTorch.HEIGHT * 0.5D, torch.getZ());
+    return BlockPos.containing(torch.getX(), torch.getY(), torch.getZ());
   }
 
   private static boolean canReplace(BlockState state) {

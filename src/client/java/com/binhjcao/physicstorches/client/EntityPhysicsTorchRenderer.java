@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
 public class EntityPhysicsTorchRenderer
@@ -30,7 +31,8 @@ public class EntityPhysicsTorchRenderer
       EntityPhysicsTorch entity, TorchRenderState state, float partialTick) {
     super.extractRenderState(entity, state, partialTick);
 
-    BlockPos blockPos = BlockPos.containing(entity.getX(), entity.getY(), entity.getZ());
+    Vec3 renderPos = entity.getPosition(partialTick);
+    BlockPos blockPos = BlockPos.containing(renderPos);
     state.movingBlockRenderState.randomSeedPos = blockPos;
     state.movingBlockRenderState.blockPos = blockPos;
     state.movingBlockRenderState.blockState = entity.getBlockState();
@@ -55,10 +57,8 @@ public class EntityPhysicsTorchRenderer
     }
 
     poseStack.pushPose();
-    poseStack.translate(-0.5D, 0.0D, -0.5D);
-    poseStack.translate(0.5D, 0.0D, 0.5D);
     poseStack.mulPose(state.orientation);
-    poseStack.translate(-0.5D, 0.0D, -0.5D);
+    poseStack.translate(-0.5D, -EntityPhysicsTorch.HALF_HEIGHT, -0.5D);
     queue.submitMovingBlock(poseStack, state.movingBlockRenderState);
     poseStack.popPose();
     super.submit(state, poseStack, queue, cameraState);

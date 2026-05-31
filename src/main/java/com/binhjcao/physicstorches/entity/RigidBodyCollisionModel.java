@@ -24,18 +24,30 @@ public final class RigidBodyCollisionModel {
 
   private record LocalSurfaceHit(Vec3 point, Vec3 outwardNormal) {}
 
-  private final double halfSize;
+  private final double halfX;
+  private final double halfY;
+  private final double halfZ;
 
-  public RigidBodyCollisionModel(double halfSize) {
-    this.halfSize = halfSize;
+  private RigidBodyCollisionModel(double halfX, double halfY, double halfZ) {
+    this.halfX = halfX;
+    this.halfY = halfY;
+    this.halfZ = halfZ;
   }
 
   public static RigidBodyCollisionModel cube(double halfSize) {
-    return new RigidBodyCollisionModel(halfSize);
+    return box(halfSize, halfSize, halfSize);
+  }
+
+  public static RigidBodyCollisionModel box(double halfX, double halfY, double halfZ) {
+    return new RigidBodyCollisionModel(halfX, halfY, halfZ);
   }
 
   public double halfSize() {
-    return halfSize;
+    return Math.max(halfX, Math.max(halfY, halfZ));
+  }
+
+  public Vec3 halfExtents() {
+    return new Vec3(halfX, halfY, halfZ);
   }
 
   public Optional<SurfaceHit> raycast(
@@ -61,7 +73,7 @@ public final class RigidBodyCollisionModel {
     Vec3 localOrigin = toLocalPoint(rayOrigin, center, orientation);
     Vec3 localDirection = toLocalDirection(rayDirection, orientation);
     Optional<LocalSurfaceHit> localHit =
-        intersectRayCube(localOrigin, localDirection, halfSize, surfaceTolerance);
+        intersectRayBox(localOrigin, localDirection, halfX, halfY, halfZ, surfaceTolerance);
     if (localHit.isEmpty()) {
       return Optional.empty();
     }
@@ -86,7 +98,7 @@ public final class RigidBodyCollisionModel {
       int[] signs = CORNER_SIGNS[i];
       corners[i] =
           localToWorld(
-              new Vec3(signs[0] * halfSize, signs[1] * halfSize, signs[2] * halfSize),
+              new Vec3(signs[0] * halfX, signs[1] * halfY, signs[2] * halfZ),
               center,
               orientation);
     }
@@ -119,25 +131,35 @@ public final class RigidBodyCollisionModel {
     return outwardNormal.scale(-1.0D);
   }
 
-  private static Optional<LocalSurfaceHit> intersectRayCube(
-      Vec3 origin, Vec3 direction, double halfSize, double surfaceTolerance) {
-    double expandedHalfSize = halfSize + surfaceTolerance;
+  private static Optional<LocalSurfaceHit> intersectRayBox(
+      Vec3 origin,
+      Vec3 direction,
+      double halfX,
+      double halfY,
+      double halfZ,
+      double surfaceTolerance) {
+    double[] halfExtents = {
+      halfX + surfaceTolerance, halfY + surfaceTolerance, halfZ + surfaceTolerance
+    };
     double tMin = Double.NEGATIVE_INFINITY;
     double tMax = Double.POSITIVE_INFINITY;
     double[] originComponents = {origin.x, origin.y, origin.z};
     double[] directionComponents = {direction.x, direction.y, direction.z};
+    double[] bounds = {halfX, halfY, halfZ};
 
     for (int axis = 0; axis < 3; axis++) {
       if (Math.abs(directionComponents[axis]) < RAY_EPSILON) {
-        if (originComponents[axis] < -expandedHalfSize
-            || originComponents[axis] > expandedHalfSize) {
+        if (originComponents[axis] < -halfExtents[axis]
+            || originComponents[axis] > halfExtents[axis]) {
           return Optional.empty();
         }
         continue;
       }
 
-      double tNear = (-expandedHalfSize - originComponents[axis]) / directionComponents[axis];
-      double tFar = (expandedHalfSize - originComponents[axis]) / directionComponents[axis];
+      double tNear =
+          (-halfExtents[axis] - originComponents[axis]) / directionComponents[axis];
+      double tFar =
+          (halfExtents[axis] - originComponents[axis]) / directionComponents[axis];
       if (tNear > tFar) {
         double swap = tNear;
         tNear = tFar;
@@ -158,40 +180,40 @@ public final class RigidBodyCollisionModel {
       return Optional.empty();
     }
 
-    Vec3 point = clampToBoxSurface(origin.add(direction.scale(t)), halfSize);
-    Vec3 outwardNormal = entryFaceNormal(point, direction, halfSize);
+    Vec3 point = clampToBoxSurface(origin.add(direction.scale(t)), bounds);
+    Vec3 outwardNormal = entryFaceNormal(point, direction, bounds);
     return Optional.of(new LocalSurfaceHit(point, outwardNormal));
   }
 
-  private static Vec3 clampToBoxSurface(Vec3 point, double halfSize) {
-    double x = Math.clamp(point.x, -halfSize, halfSize);
-    double y = Math.clamp(point.y, -halfSize, halfSize);
-    double z = Math.clamp(point.z, -halfSize, halfSize);
-    if (Math.abs(x) < halfSize - FACE_EPSILON
-        && Math.abs(y) < halfSize - FACE_EPSILON
-        && Math.abs(z) < halfSize - FACE_EPSILON) {
+  private static Vec3 clampToBoxSurface(Vec3 point, double[] halfExtents) {
+    double x = Math.clamp(point.x, -halfExtents[0], halfExtents[0]);
+    double y = Math.clamp(point.y, -halfExtents[1], halfExtents[1]);
+    double z = Math.clamp(point.z, -halfExtents[2], halfExtents[2]);
+    if (Math.abs(x) < halfExtents[0] - FACE_EPSILON
+        && Math.abs(y) < halfExtents[1] - FACE_EPSILON
+        && Math.abs(z) < halfExtents[2] - FACE_EPSILON) {
       double absX = Math.abs(x);
       double absY = Math.abs(y);
       double absZ = Math.abs(z);
       if (absX >= absY && absX >= absZ) {
-        x = Math.copySign(halfSize, x != 0.0D ? x : 1.0D);
+        x = Math.copySign(halfExtents[0], x != 0.0D ? x : 1.0D);
       } else if (absY >= absZ) {
-        y = Math.copySign(halfSize, y != 0.0D ? y : 1.0D);
+        y = Math.copySign(halfExtents[1], y != 0.0D ? y : 1.0D);
       } else {
-        z = Math.copySign(halfSize, z != 0.0D ? z : 1.0D);
+        z = Math.copySign(halfExtents[2], z != 0.0D ? z : 1.0D);
       }
     }
 
     return new Vec3(x, y, z);
   }
 
-  private static Vec3 entryFaceNormal(Vec3 hit, Vec3 direction, double halfSize) {
+  private static Vec3 entryFaceNormal(Vec3 hit, Vec3 direction, double[] halfExtents) {
     int bestAxis = -1;
     double bestAlignment = 0.0D;
 
     for (int axis = 0; axis < 3; axis++) {
       double coordinate = axisComponent(hit, axis);
-      if (Math.abs(Math.abs(coordinate) - halfSize) > FACE_EPSILON) {
+      if (Math.abs(Math.abs(coordinate) - halfExtents[axis]) > FACE_EPSILON) {
         continue;
       }
 

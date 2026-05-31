@@ -34,7 +34,7 @@ public class PhysicsTorchesMod implements ModInitializer {
   static void throwHeldTorch(ServerPlayer player) {
     for (InteractionHand hand : InteractionHand.values()) {
       ItemStack stack = player.getItemInHand(hand);
-      if (isTorch(stack) && EntityPhysicsTorch.throwFromPlayer(player, stack)) {
+      if (isTorch(stack) && EntityPhysicsTorch.throwFromPlayer(player, stack, hand)) {
         return;
       }
     }

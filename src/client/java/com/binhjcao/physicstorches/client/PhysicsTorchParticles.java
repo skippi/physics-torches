@@ -57,9 +57,10 @@ public final class PhysicsTorchParticles {
       Vector3f offset = flameOffset(blockState);
       torch.getOrientation(1.0F).transform(offset);
 
-      double x = torch.getX() + offset.x;
-      double y = torch.getY() + offset.y;
-      double z = torch.getZ() + offset.z;
+      var corner = torch.blockRenderCorner(1.0F);
+      double x = corner.x + offset.x;
+      double y = corner.y + offset.y;
+      double z = corner.z + offset.z;
       RandomSource random = torch.getRandom();
       ParticleOptions flame = flameParticle(blockState);
 
