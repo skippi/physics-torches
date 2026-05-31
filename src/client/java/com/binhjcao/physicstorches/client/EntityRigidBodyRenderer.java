@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
 public class EntityRigidBodyRenderer
@@ -33,7 +34,8 @@ public class EntityRigidBodyRenderer
       EntityRigidBody entity, CubeRenderState state, float partialTick) {
     super.extractRenderState(entity, state, partialTick);
 
-    BlockPos blockPos = BlockPos.containing(entity.getX(), entity.getY(), entity.getZ());
+    Vec3 renderPos = entity.getPosition(partialTick);
+    BlockPos blockPos = BlockPos.containing(renderPos);
     state.movingBlockRenderState.randomSeedPos = blockPos;
     state.movingBlockRenderState.blockPos = blockPos;
     state.movingBlockRenderState.blockState = CUBE_BLOCK;

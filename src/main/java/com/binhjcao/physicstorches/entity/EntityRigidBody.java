@@ -9,6 +9,7 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.InterpolationHandler;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
@@ -75,6 +76,7 @@ public class EntityRigidBody extends Entity {
 
   private final Quaternionf orientation = new Quaternionf();
   private final Quaternionf prevOrientation = new Quaternionf();
+  private final InterpolationHandler interpolation = new InterpolationHandler(this);
 
   private double mass = 1.0D;
   private double linearDamp = 0.0D;
@@ -319,6 +321,11 @@ public class EntityRigidBody extends Entity {
   }
 
   @Override
+  public InterpolationHandler getInterpolation() {
+    return interpolation;
+  }
+
+  @Override
   protected void defineSynchedData(SynchedEntityData.Builder builder) {
     builder.define(DATA_ORIENT_X, 0.0F);
     builder.define(DATA_ORIENT_Y, 0.0F);
@@ -429,6 +436,7 @@ public class EntityRigidBody extends Entity {
 
   @Override
   public void tick() {
+    interpolation.interpolate();
     prevOrientation.set(orientation);
 
     if (level().isClientSide()) {

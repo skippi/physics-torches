@@ -58,7 +58,7 @@ public final class RigidBodyDebugRenderer {
 
   private static void renderCollisionOutline(EntityRigidBody body, float partialTick) {
     Quaternionf orientation = body.getOrientation(partialTick);
-    Vec3 center = body.position();
+    Vec3 center = body.getPosition(partialTick);
     Vec3[] corners = body.collisionModel().worldCorners(center, orientation);
 
     emitEdge(corners[0], corners[1]);
