@@ -20,7 +20,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
-public class EntityTorchRigidBody extends EntityRigidBody {
+public class EntityTorch extends EntityRigidBody {
   public static final double HALF_WIDTH = 0.0625D;
   public static final double HEIGHT = 0.625D;
   public static final double HALF_HEIGHT = HEIGHT * 0.5D;
@@ -35,11 +35,11 @@ public class EntityTorchRigidBody extends EntityRigidBody {
   private static final Vec3 WORLD_UP = new Vec3(0.0D, 1.0D, 0.0D);
 
   private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
-      SynchedEntityData.defineId(EntityTorchRigidBody.class, EntityDataSerializers.BLOCK_STATE);
+      SynchedEntityData.defineId(EntityTorch.class, EntityDataSerializers.BLOCK_STATE);
 
   private @Nullable BlockPos lightBlockPos;
 
-  public EntityTorchRigidBody(EntityType<? extends EntityTorchRigidBody> type, Level level) {
+  public EntityTorch(EntityType<? extends EntityTorch> type, Level level) {
     super(type, level);
     mass(0.5D);
     linearDamp(0.6D);
@@ -48,8 +48,8 @@ public class EntityTorchRigidBody extends EntityRigidBody {
     inputRayPickable(true);
   }
 
-  public EntityTorchRigidBody(Level level, BlockState blockState, Vec3 position) {
-    this(PhysicsTorchesEntities.TORCH_RIGIDBODY, level);
+  public EntityTorch(Level level, BlockState blockState, Vec3 position) {
+    this(PhysicsTorchesEntities.TORCH, level);
     setBlockState(blockState);
     setPos(position.x, position.y, position.z);
   }
@@ -66,7 +66,7 @@ public class EntityTorchRigidBody extends EntityRigidBody {
             .add(side.scale(THROW_SPAWN_SIDE));
     Vec3 position = new Vec3(spawn.x, spawn.y - HALF_HEIGHT, spawn.z);
 
-    EntityTorchRigidBody torch = new EntityTorchRigidBody(player.level(), blockState, position);
+    EntityTorch torch = new EntityTorch(player.level(), blockState, position);
     player.level().addFreshEntity(torch);
     torch.fling(look);
     stack.shrink(1);

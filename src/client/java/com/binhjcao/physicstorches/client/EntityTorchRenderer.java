@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches.client;
 
-import com.binhjcao.physicstorches.entity.EntityTorchRigidBody;
+import com.binhjcao.physicstorches.entity.EntityTorch;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -15,9 +15,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
-public class EntityTorchRigidBodyRenderer
-    extends EntityRenderer<EntityTorchRigidBody, EntityTorchRigidBodyRenderer.TorchRenderState> {
-  public EntityTorchRigidBodyRenderer(EntityRendererProvider.Context context) {
+public class EntityTorchRenderer
+    extends EntityRenderer<EntityTorch, EntityTorchRenderer.TorchRenderState> {
+  public EntityTorchRenderer(EntityRendererProvider.Context context) {
     super(context);
   }
 
@@ -27,8 +27,7 @@ public class EntityTorchRigidBodyRenderer
   }
 
   @Override
-  public void extractRenderState(
-      EntityTorchRigidBody entity, TorchRenderState state, float partialTick) {
+  public void extractRenderState(EntityTorch entity, TorchRenderState state, float partialTick) {
     super.extractRenderState(entity, state, partialTick);
 
     Vec3 renderPos = entity.getPosition(partialTick);
@@ -58,7 +57,7 @@ public class EntityTorchRigidBodyRenderer
 
     poseStack.pushPose();
     poseStack.mulPose(state.orientation);
-    poseStack.translate(-0.5D, -EntityTorchRigidBody.HALF_HEIGHT, -0.5D);
+    poseStack.translate(-0.5D, -EntityTorch.HALF_HEIGHT, -0.5D);
     queue.submitMovingBlock(poseStack, state.movingBlockRenderState);
     poseStack.popPose();
     super.submit(state, poseStack, queue, cameraState);

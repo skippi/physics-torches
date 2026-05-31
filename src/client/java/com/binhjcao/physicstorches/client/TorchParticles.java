@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches.client;
 
-import com.binhjcao.physicstorches.entity.EntityTorchRigidBody;
+import com.binhjcao.physicstorches.entity.EntityTorch;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.Direction;
@@ -44,7 +44,7 @@ public final class TorchParticles {
     lastParticleGameTime = gameTime;
 
     AABB search = client.player.getBoundingBox().inflate(48.0D);
-    for (EntityTorchRigidBody torch : level.getEntitiesOfClass(EntityTorchRigidBody.class, search)) {
+    for (EntityTorch torch : level.getEntitiesOfClass(EntityTorch.class, search)) {
       BlockState blockState = torch.getBlockState();
       if (!shouldSpawn(blockState)) {
         continue;

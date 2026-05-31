@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches;
 
-import com.binhjcao.physicstorches.client.EntityTorchRigidBodyRenderer;
+import com.binhjcao.physicstorches.client.EntityTorchRenderer;
 import com.binhjcao.physicstorches.client.EntityRigidBodyRenderer;
 import com.binhjcao.physicstorches.client.TorchParticles;
 import com.binhjcao.physicstorches.client.PhysicsTorchesDebugOptions;
@@ -29,7 +29,7 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
     PhysicsTorchesDebugOptions.register();
 
     EntityRendererRegistry.register(
-        PhysicsTorchesEntities.TORCH_RIGIDBODY, EntityTorchRigidBodyRenderer::new);
+        PhysicsTorchesEntities.TORCH, EntityTorchRenderer::new);
     EntityRendererRegistry.register(
         PhysicsTorchesEntities.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
 

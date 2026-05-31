@@ -19,7 +19,7 @@ final class TorchLight {
 
   private TorchLight() {}
 
-  static int luminance(EntityTorchRigidBody torch) {
+  static int luminance(EntityTorch torch) {
     if (torch.isInWater()) {
       return 0;
     }
@@ -32,7 +32,7 @@ final class TorchLight {
     return state.getLightEmission();
   }
 
-  static void update(EntityTorchRigidBody torch) {
+  static void update(EntityTorch torch) {
     if (torch.level().isClientSide()) {
       return;
     }
@@ -57,7 +57,7 @@ final class TorchLight {
     attach(torch, target, luminance);
   }
 
-  static void clear(EntityTorchRigidBody torch) {
+  static void clear(EntityTorch torch) {
     BlockPos pos = torch.lightBlockPos();
     if (pos == null || torch.level().isClientSide()) {
       torch.setLightBlockPos(null);
@@ -87,7 +87,7 @@ final class TorchLight {
     torch.setLightBlockPos(null);
   }
 
-  private static void attach(EntityTorchRigidBody torch, BlockPos target, int luminance) {
+  private static void attach(EntityTorch torch, BlockPos target, int luminance) {
     ServerLevel level = (ServerLevel) torch.level();
     BlockState current = level.getBlockState(target);
     if (!canReplace(current)) {
@@ -126,7 +126,7 @@ final class TorchLight {
     cells(level).put(target, new Cell(cell.original, cell.refs, luminance));
   }
 
-  private static BlockPos lightPos(EntityTorchRigidBody torch) {
+  private static BlockPos lightPos(EntityTorch torch) {
     return BlockPos.containing(torch.getX(), torch.getY(), torch.getZ());
   }
 

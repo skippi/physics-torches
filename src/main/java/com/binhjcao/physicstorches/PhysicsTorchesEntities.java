@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches;
 
-import com.binhjcao.physicstorches.entity.EntityTorchRigidBody;
+import com.binhjcao.physicstorches.entity.EntityTorch;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,17 +11,17 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 
 public final class PhysicsTorchesEntities {
-  private static final ResourceKey<EntityType<?>> TORCH_RIGIDBODY_KEY =
+  private static final ResourceKey<EntityType<?>> TORCH_KEY =
       ResourceKey.create(
           Registries.ENTITY_TYPE,
-          Identifier.fromNamespaceAndPath(PhysicsTorchesMod.MOD_ID, "torch_rigidbody"));
+          Identifier.fromNamespaceAndPath(PhysicsTorchesMod.MOD_ID, "torch"));
 
-  public static final EntityType<EntityTorchRigidBody> TORCH_RIGIDBODY =
-      EntityType.Builder.<EntityTorchRigidBody>of(EntityTorchRigidBody::new, MobCategory.MISC)
-          .sized((float) (EntityTorchRigidBody.HALF_WIDTH * 2F), (float) EntityTorchRigidBody.HEIGHT)
+  public static final EntityType<EntityTorch> TORCH =
+      EntityType.Builder.<EntityTorch>of(EntityTorch::new, MobCategory.MISC)
+          .sized((float) (EntityTorch.HALF_WIDTH * 2F), (float) EntityTorch.HEIGHT)
           .clientTrackingRange(64)
           .updateInterval(1)
-          .build(TORCH_RIGIDBODY_KEY);
+          .build(TORCH_KEY);
 
   private static final ResourceKey<EntityType<?>> RIGID_BODY_CUBE_KEY =
       ResourceKey.create(
@@ -36,7 +36,7 @@ public final class PhysicsTorchesEntities {
           .build(RIGID_BODY_CUBE_KEY);
 
   static void register() {
-    Registry.register(BuiltInRegistries.ENTITY_TYPE, TORCH_RIGIDBODY_KEY, TORCH_RIGIDBODY);
+    Registry.register(BuiltInRegistries.ENTITY_TYPE, TORCH_KEY, TORCH);
     Registry.register(BuiltInRegistries.ENTITY_TYPE, RIGID_BODY_CUBE_KEY, RIGID_BODY_CUBE);
   }
 
