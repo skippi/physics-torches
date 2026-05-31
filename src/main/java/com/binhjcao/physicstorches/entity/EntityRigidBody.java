@@ -6,7 +6,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.InterpolationHandler;
@@ -423,12 +422,20 @@ public class EntityRigidBody extends Entity {
   }
 
   @Override
-  public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-    Entity attacker = source.getEntity();
-    if (attacker instanceof Player player && source.is(DamageTypes.PLAYER_ATTACK)) {
-      return handlePlayerSurfaceInput(player);
+  public boolean skipAttackInteraction(Entity source) {
+    if (!(source instanceof Player player) || !inputRayPickable) {
+      return false;
     }
 
+    if (!level().isClientSide()) {
+      handlePlayerSurfaceInput(player);
+    }
+
+    return true;
+  }
+
+  @Override
+  public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
     return false;
   }
 
