@@ -77,7 +77,9 @@ public class EntityTorch extends EntityRigidBody {
     EntityTorch torch = new EntityTorch(player.level(), blockState, position);
     player.level().addFreshEntity(torch);
     torch.fling(look);
-    stack.shrink(1);
+    if (!player.isCreative()) {
+      stack.shrink(1);
+    }
     return true;
   }
 
@@ -285,15 +287,17 @@ public class EntityTorch extends EntityRigidBody {
       return false;
     }
 
-    ItemStack stack = itemStackForBlockState(getBlockState());
-    stack.setCount(1);
+    if (!player.isCreative()) {
+      ItemStack stack = itemStackForBlockState(getBlockState());
+      stack.setCount(1);
 
-    ItemEntity itemEntity = new ItemEntity(serverLevel, getX(), getY(), getZ(), stack);
-    itemEntity.setNoPickUpDelay();
-    itemEntity.setTarget(player.getUUID());
-    itemEntity.setThrower(player);
-    serverLevel.addFreshEntity(itemEntity);
-    itemEntity.playerTouch(player);
+      ItemEntity itemEntity = new ItemEntity(serverLevel, getX(), getY(), getZ(), stack);
+      itemEntity.setNoPickUpDelay();
+      itemEntity.setTarget(player.getUUID());
+      itemEntity.setThrower(player);
+      serverLevel.addFreshEntity(itemEntity);
+      itemEntity.playerTouch(player);
+    }
 
     discard();
     return true;
