@@ -20,6 +20,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
 public class PhysicsTorchesModClient implements ClientModInitializer {
+  private static final int THROW_TORCH_DELAY = 4;
+  private static int throwTorchDelay;
+
   @Override
   public void onInitializeClient() {
     PhysicsTorchesDebugOptions.register();
@@ -49,14 +52,25 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
       return;
     }
 
-    while (PhysicsTorchesKeyMappings.throwTorch.consumeClick()) {
-      if (!holdingTorch(client.player)
-          || !ClientPlayNetworking.canSend(DropTorchPayload.TYPE)) {
-        continue;
-      }
-
-      ClientPlayNetworking.send(new DropTorchPayload(movementPerTick(client.player)));
+    if (throwTorchDelay > 0) {
+      throwTorchDelay--;
     }
+
+    while (PhysicsTorchesKeyMappings.throwTorch.consumeClick()
+        && throwTorchDelay == 0
+        && !client.player.isUsingItem()) {
+      tryThrowTorch(client);
+    }
+  }
+
+  private static void tryThrowTorch(Minecraft client) {
+    if (!holdingTorch(client.player)
+        || !ClientPlayNetworking.canSend(DropTorchPayload.TYPE)) {
+      return;
+    }
+
+    ClientPlayNetworking.send(new DropTorchPayload(movementPerTick(client.player)));
+    throwTorchDelay = THROW_TORCH_DELAY;
   }
 
   private static boolean holdingTorch(Player player) {
