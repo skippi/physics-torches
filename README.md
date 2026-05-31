@@ -1,6 +1,6 @@
-# physics-torches
+# Physics Torches
 
-Minecraft mod that lets you drop a torch while holding one.
+Minecraft mod that lets you throw your torches like an actual object.
 
 ## Usage
 
