@@ -16,7 +16,6 @@ public class PhysicsTorchesMod implements ModInitializer {
 
   @Override
   public void onInitialize() {
-    ModEntityTypes.TORCH.getClass();
     PhysicsTorchesCommands.register();
     PayloadTypeRegistry.serverboundPlay().register(DropTorchPayload.TYPE, DropTorchPayload.CODEC);
 

@@ -16,11 +16,7 @@ public final class RigidBodyCollisionModel {
     {-1, 1, -1}, {1, 1, -1}, {-1, 1, 1}, {1, 1, 1}
   };
 
-  public record SurfaceHit(Vec3 worldPoint, Vec3 worldNormal) {
-    public Vec3 inwardNormal() {
-      return worldNormal.scale(-1.0D);
-    }
-  }
+  public record SurfaceHit(Vec3 worldPoint, Vec3 worldNormal) {}
 
   private record LocalSurfaceHit(Vec3 point, Vec3 outwardNormal) {}
 
@@ -40,10 +36,6 @@ public final class RigidBodyCollisionModel {
 
   public static RigidBodyCollisionModel box(double halfX, double halfY, double halfZ) {
     return new RigidBodyCollisionModel(halfX, halfY, halfZ);
-  }
-
-  public double halfSize() {
-    return Math.max(halfX, Math.max(halfY, halfZ));
   }
 
   public Vec3 halfExtents() {
@@ -129,10 +121,6 @@ public final class RigidBodyCollisionModel {
 
     AABB bounds = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     return inflate > 0.0D ? bounds.inflate(inflate) : bounds;
-  }
-
-  public static Vec3 inwardNormal(Vec3 outwardNormal) {
-    return outwardNormal.scale(-1.0D);
   }
 
   private static Optional<LocalSurfaceHit> intersectRayBox(

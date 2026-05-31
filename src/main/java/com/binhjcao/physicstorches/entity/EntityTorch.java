@@ -105,10 +105,6 @@ public class EntityTorch extends EntityRigidBody {
     applyTorqueImpulse(leverArm.cross(dir.add(variance).scale(-THROW_SPIN_IMPULSE)));
   }
 
-  public Vec3 blockRenderCorner(float partialTick) {
-    return getPosition(partialTick).add(toWorldDirection(new Vec3(-0.5D, -HALF_HEIGHT, -0.5D)));
-  }
-
   public Vec3 flamePosition(float partialTick) {
     Vec3 local = flameOffsetLocal(getBlockState());
     Vector3f world = new Vector3f((float) local.x, (float) local.y, (float) local.z);
