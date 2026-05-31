@@ -8,10 +8,9 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -282,27 +281,19 @@ public class EntityTorch extends EntityRigidBody {
   }
 
   private boolean tryPickUp(ServerPlayer player) {
-    if (!isAlive()) {
+    if (!isAlive() || !(level() instanceof ServerLevel serverLevel)) {
       return false;
     }
 
     ItemStack stack = itemStackForBlockState(getBlockState());
-    if (!player.getInventory().add(stack)) {
-      player.drop(stack, false);
-    }
+    stack.setCount(1);
 
-    if (level() instanceof ServerLevel serverLevel) {
-      var random = serverLevel.getRandom();
-      serverLevel.playSound(
-          null,
-          getX(),
-          getY(),
-          getZ(),
-          SoundEvents.ITEM_PICKUP,
-          SoundSource.PLAYERS,
-          0.2F,
-          (random.nextFloat() - random.nextFloat()) * 1.4F + 2.0F);
-    }
+    ItemEntity itemEntity = new ItemEntity(serverLevel, getX(), getY(), getZ(), stack);
+    itemEntity.setNoPickUpDelay();
+    itemEntity.setTarget(player.getUUID());
+    itemEntity.setThrower(player);
+    serverLevel.addFreshEntity(itemEntity);
+    itemEntity.playerTouch(player);
 
     discard();
     return true;
