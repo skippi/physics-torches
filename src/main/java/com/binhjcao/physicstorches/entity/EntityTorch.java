@@ -2,6 +2,7 @@ package com.binhjcao.physicstorches.entity;
 
 import com.binhjcao.physicstorches.PhysicsTorchesEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -15,6 +16,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import org.joml.Vector3f;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
@@ -24,6 +27,8 @@ public class EntityTorch extends EntityRigidBody {
   public static final double HALF_WIDTH = 0.0625D;
   public static final double HEIGHT = 0.625D;
   public static final double HALF_HEIGHT = HEIGHT * 0.5D;
+  private static final double FLAME_HEIGHT = 0.7D;
+  private static final double WALL_FLAME_OFFSET = 0.27D;
   private static final double THROW_SPEED = 25;
   private static final double THROW_LIFT = 1D;
   private static final double THROW_SPAWN_FORWARD = 0.25D;
@@ -92,6 +97,25 @@ public class EntityTorch extends EntityRigidBody {
 
   public Vec3 blockRenderCorner(float partialTick) {
     return getPosition(partialTick).add(toWorldDirection(new Vec3(-0.5D, -HALF_HEIGHT, -0.5D)));
+  }
+
+  public Vec3 flamePosition(float partialTick) {
+    Vec3 local = flameOffsetLocal(getBlockState());
+    Vector3f world = new Vector3f((float) local.x, (float) local.y, (float) local.z);
+    getOrientation(partialTick).transform(world);
+    Vec3 pos = getPosition(partialTick);
+    return new Vec3(pos.x + world.x, pos.y + world.y, pos.z + world.z);
+  }
+
+  private static Vec3 flameOffsetLocal(BlockState state) {
+    double y = FLAME_HEIGHT - HALF_HEIGHT;
+    if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+      Direction out = state.getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite();
+      return new Vec3(
+          out.getStepX() * WALL_FLAME_OFFSET, y, out.getStepZ() * WALL_FLAME_OFFSET);
+    }
+
+    return new Vec3(0.0D, y, 0.0D);
   }
 
   public static BlockState blockStateForTorch(ItemStack stack) {

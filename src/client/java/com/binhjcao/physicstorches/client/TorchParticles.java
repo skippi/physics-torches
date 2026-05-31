@@ -3,21 +3,17 @@ package com.binhjcao.physicstorches.client;
 import com.binhjcao.physicstorches.entity.EntityTorch;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RedstoneTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
-import org.joml.Vector3f;
+import net.minecraft.world.phys.Vec3;
 
 public final class TorchParticles {
-  private static final float FLAME_HEIGHT = 0.7F;
-  private static final float WALL_FLAME_OFFSET = 0.27F;
   private static final int SPAWN_CHANCE = 40;
   private static final int SMOKE_PER_SPAWN = 3;
   private static final int FLAME_PER_SPAWN = 2;
@@ -54,22 +50,16 @@ public final class TorchParticles {
         continue;
       }
 
-      Vector3f offset = flameOffset(blockState);
-      torch.getOrientation(1.0F).transform(offset);
-
-      var corner = torch.blockRenderCorner(1.0F);
-      double x = corner.x + offset.x;
-      double y = corner.y + offset.y;
-      double z = corner.z + offset.z;
+      Vec3 flame = torch.flamePosition(1.0F);
       RandomSource random = torch.getRandom();
-      ParticleOptions flame = flameParticle(blockState);
+      ParticleOptions flameType = flameParticle(blockState);
 
       for (int i = 0; i < SMOKE_PER_SPAWN; i++) {
-        spawnAt(level, ParticleTypes.SMOKE, x, y, z, random);
+        spawnAt(level, ParticleTypes.SMOKE, flame.x, flame.y, flame.z, random);
       }
-      if (flame != null) {
+      if (flameType != null) {
         for (int i = 0; i < FLAME_PER_SPAWN; i++) {
-          spawnAt(level, flame, x, y, z, random);
+          spawnAt(level, flameType, flame.x, flame.y, flame.z, random);
         }
       }
     }
@@ -99,16 +89,6 @@ public final class TorchParticles {
     }
 
     return BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath().contains("torch");
-  }
-
-  private static Vector3f flameOffset(BlockState state) {
-    if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-      Direction out = state.getValue(BlockStateProperties.HORIZONTAL_FACING).getOpposite();
-      return new Vector3f(
-          out.getStepX() * WALL_FLAME_OFFSET, FLAME_HEIGHT, out.getStepZ() * WALL_FLAME_OFFSET);
-    }
-
-    return new Vector3f(0.0F, FLAME_HEIGHT, 0.0F);
   }
 
   private static ParticleOptions flameParticle(BlockState state) {
