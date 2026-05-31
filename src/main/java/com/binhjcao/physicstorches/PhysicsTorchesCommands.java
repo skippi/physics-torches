@@ -144,12 +144,23 @@ public final class PhysicsTorchesCommands {
   }
 
   private static void runTestCollision(ServerPlayer player) {
-    EntityRigidBody cube = new EntityRigidBody(
-        player.level(), cubePositionInFrontOf(player).add(0, 5, 0));
-    cube.linearDamp(0.1);
-    cube.angularDamp(0.1);
-    cube.bounce(0);
-    player.level().addFreshEntity(cube);
+    class EntityTestCollision extends EntityRigidBody {
+      public EntityTestCollision(Level level) {
+        super(level, cubePositionInFrontOf(player).add(0, 5, 0));
+        linearDamp(0.1);
+        angularDamp(0.1);
+        bounce(0);
+      }
+
+      @Override
+      protected void onSurfaceInput(Player player, Vec3 surfacePosition, Vec3 surfaceNormal) {
+        Vec3 impulse =
+            PlayerLookRay.from(player, 1.0F).normalizedDirection().scale(2.5D);
+        Vec3 leverArm = surfacePosition.subtract(position());
+        applyImpulse(impulse, leverArm);
+      }
+    }
+    player.level().addFreshEntity(new EntityTestCollision(player.level()));
   }
 
   private static Vec3 cubePositionInFrontOf(ServerPlayer player) {
