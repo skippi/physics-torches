@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches.entity;
 
-import com.binhjcao.physicstorches.PhysicsTorchesEntities;
+import com.binhjcao.physicstorches.ModEntityTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -123,7 +123,7 @@ public class EntityRigidBody extends Entity {
   }
 
   public EntityRigidBody(Level level, Vec3 position, Quaternionf initialOrientation) {
-    this(PhysicsTorchesEntities.RIGID_BODY_CUBE, level, position, initialOrientation);
+    this(ModEntityTypes.RIGID_BODY_CUBE, level, position, initialOrientation);
   }
 
   public EntityRigidBody(

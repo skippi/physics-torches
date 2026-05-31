@@ -1,6 +1,6 @@
 package com.binhjcao.physicstorches.entity;
 
-import com.binhjcao.physicstorches.PhysicsTorchesEntities;
+import com.binhjcao.physicstorches.ModEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -56,7 +56,7 @@ public class EntityTorch extends EntityRigidBody {
   }
 
   public EntityTorch(Level level, BlockState blockState, Vec3 position) {
-    this(PhysicsTorchesEntities.TORCH, level);
+    this(ModEntityTypes.TORCH, level);
     setBlockState(blockState);
     setPos(position.x, position.y, position.z);
   }

@@ -12,9 +12,9 @@ import com.binhjcao.physicstorches.network.DropTorchPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -25,10 +25,10 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
     PhysicsTorchesDebugOptions.register();
     PhysicsTorchesKeyMappings.register();
 
-    EntityRendererRegistry.register(
-        PhysicsTorchesEntities.TORCH, EntityTorchRenderer::new);
-    EntityRendererRegistry.register(
-        PhysicsTorchesEntities.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
+    EntityRenderers.register(
+        ModEntityTypes.TORCH, EntityTorchRenderer::new);
+    EntityRenderers.register(
+        ModEntityTypes.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
 
     ClientTickEvents.END_CLIENT_TICK.register(PhysicsTorchesModClient::onClientTick);
   }
