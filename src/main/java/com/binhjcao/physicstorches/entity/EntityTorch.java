@@ -61,6 +61,7 @@ public class EntityTorch extends EntityRigidBody {
 
   public static boolean throwFromPlayer(
       ServerPlayer player, ItemStack stack, InteractionHand hand) {
+    player.swing(hand, true);
     BlockState blockState = blockStateForTorch(stack);
     Vec3 look = player.getLookAngle();
     Vec3 side = throwSideOffset(player, hand);
