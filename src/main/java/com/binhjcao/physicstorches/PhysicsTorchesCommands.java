@@ -31,6 +31,7 @@ public final class PhysicsTorchesCommands {
     registerTest("physicstorches:test_quaternion", PhysicsTorchesCommands::runTestQuaternion);
     registerTest("physicstorches:test_torque", PhysicsTorchesCommands::runTestTorque);
     registerTest("physicstorches:test_linear", PhysicsTorchesCommands::runTestLinear);
+    registerTest("physicstorches:test_collision", PhysicsTorchesCommands::runTestCollision);
   }
 
   private PhysicsTorchesCommands() {}
@@ -140,6 +141,16 @@ public final class PhysicsTorchesCommands {
       }
     }
     player.level().addFreshEntity(new EntityTestLinear(player.level()));
+  }
+
+  private static void runTestCollision(ServerPlayer player) {
+    EntityRigidBody cube = new EntityRigidBody(
+        player.level(), cubePositionInFrontOf(player).add(0, 5, 0));
+    cube.gravityScale(0.1);
+    cube.linearDamp(0.1);
+    cube.angularDamp(0.1);
+    cube.bounce(0);
+    player.level().addFreshEntity(cube);
   }
 
   private static Vec3 cubePositionInFrontOf(ServerPlayer player) {

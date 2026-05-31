@@ -24,6 +24,10 @@ public final class RigidBodyDebugRenderer {
       return;
     }
 
+    if (!client.getDebugOverlay().showDebugScreen()) {
+      return;
+    }
+
     boolean visualizeCollision =
         client.debugEntries.isCurrentlyEnabled(PhysicsTorchesDebugOptions.VISUALIZE_RIGIDBODY);
     boolean visualizeTransform =
