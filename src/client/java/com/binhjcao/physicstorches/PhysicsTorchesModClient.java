@@ -5,6 +5,8 @@ import com.binhjcao.physicstorches.client.EntityRigidBodyRenderer;
 import com.binhjcao.physicstorches.client.TorchParticles;
 import com.binhjcao.physicstorches.client.PhysicsTorchesDebugOptions;
 import com.binhjcao.physicstorches.client.RigidBodyDebugRenderer;
+import com.binhjcao.physicstorches.client.TorchHoverOutlineRenderer;
+import com.binhjcao.physicstorches.entity.RigidBodyCrosshairHover;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
@@ -57,6 +59,12 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
     if (client.level instanceof ClientLevel clientLevel) {
       TorchParticles.tick(clientLevel, client);
       RigidBodyDebugRenderer.tick(client);
+
+      float partialTick = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
+      RigidBodyCrosshairHover.tick(client, clientLevel, partialTick);
+      try (var ignored = client.collectPerTickGizmos()) {
+        TorchHoverOutlineRenderer.emit(client, clientLevel, partialTick);
+      }
     }
 
     if (client.player == null || client.screen != null) {

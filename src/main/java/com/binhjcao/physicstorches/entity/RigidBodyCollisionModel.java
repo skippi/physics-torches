@@ -93,14 +93,18 @@ public final class RigidBodyCollisionModel {
   }
 
   public Vec3[] worldCorners(Vec3 center, Quaternionf orientation) {
+    return worldCorners(center, orientation, 0.0D);
+  }
+
+  public Vec3[] worldCorners(Vec3 center, Quaternionf orientation, double halfExtentInflate) {
     Vec3[] corners = new Vec3[CORNER_SIGNS.length];
+    double hx = halfX + halfExtentInflate;
+    double hy = halfY + halfExtentInflate;
+    double hz = halfZ + halfExtentInflate;
     for (int i = 0; i < CORNER_SIGNS.length; i++) {
       int[] signs = CORNER_SIGNS[i];
       corners[i] =
-          localToWorld(
-              new Vec3(signs[0] * halfX, signs[1] * halfY, signs[2] * halfZ),
-              center,
-              orientation);
+          localToWorld(new Vec3(signs[0] * hx, signs[1] * hy, signs[2] * hz), center, orientation);
     }
     return corners;
   }
