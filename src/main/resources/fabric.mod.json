@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "physics-torches",
+  "version": "${version}",
+  "name": "Physics Torches",
+  "description": "Drop torches with Left Alt + right click.",
+  "authors": ["skippi"],
+  "contact": {
+    "homepage": "https://github.com/skippi/physics-torches",
+    "issues": "https://github.com/skippi/physics-torches/issues"
+  },
+  "license": "GPL-3.0",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.binhjcao.physicstorches.PhysicsTorchesMod"],
+    "client": ["com.binhjcao.physicstorches.PhysicsTorchesModClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "minecraft": "~26.1.2",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
