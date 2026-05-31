@@ -21,6 +21,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.glfw.GLFW;
 
 public class PhysicsTorchesModClient implements ClientModInitializer {
@@ -77,7 +78,7 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
         && !useKeyWasDown
         && shouldThrowTorch(client.player)
         && ClientPlayNetworking.canSend(DropTorchPayload.TYPE)) {
-      ClientPlayNetworking.send(new DropTorchPayload());
+      ClientPlayNetworking.send(new DropTorchPayload(movementPerTick(client.player)));
     }
 
     useKeyWasDown = useKeyDown;
@@ -95,5 +96,12 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
 
     return PhysicsTorchesMod.isTorch(player.getItemInHand(InteractionHand.MAIN_HAND))
         || PhysicsTorchesMod.isTorch(player.getItemInHand(InteractionHand.OFF_HAND));
+  }
+
+  private static Vec3 movementPerTick(Player player) {
+    return new Vec3(
+        player.getX() - player.xOld,
+        player.getY() - player.yOld,
+        player.getZ() - player.zOld);
   }
 }

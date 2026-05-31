@@ -62,7 +62,7 @@ public class EntityTorch extends EntityRigidBody {
   }
 
   public static boolean throwFromPlayer(
-      ServerPlayer player, ItemStack stack, InteractionHand hand) {
+      ServerPlayer player, ItemStack stack, InteractionHand hand, Vec3 playerDeltaMovement) {
     player.swing(hand, true);
     BlockState blockState = blockStateForTorch(stack);
     Vec3 look = player.getLookAngle();
@@ -77,6 +77,11 @@ public class EntityTorch extends EntityRigidBody {
     EntityTorch torch = new EntityTorch(player.level(), blockState, position);
     player.level().addFreshEntity(torch);
     torch.fling(look);
+    torch.linearVelocity(
+        torch
+            .linearVelocity()
+            .add(
+                playerDeltaMovement.scale(player.level().tickRateManager().tickrate())));
     if (!player.isCreative()) {
       stack.shrink(1);
     }
