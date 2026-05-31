@@ -146,7 +146,6 @@ public final class PhysicsTorchesCommands {
   private static void runTestCollision(ServerPlayer player) {
     EntityRigidBody cube = new EntityRigidBody(
         player.level(), cubePositionInFrontOf(player).add(0, 5, 0));
-    cube.gravityScale(0.1);
     cube.linearDamp(0.1);
     cube.angularDamp(0.1);
     cube.bounce(0);

@@ -444,6 +444,7 @@ public class EntityRigidBody extends Entity {
       }
       if (!sleeping) {
         integrateAngularVelocity();
+        resolvePenetration();
       }
       linearVelocity(linearVelocity().scale(1.0D - linearDamp * physicsDt()));
       syncOrientationData();
@@ -550,7 +551,7 @@ public class EntityRigidBody extends Entity {
   }
 
   public MoveAndCollideResult moveAndCollide(Vec3 motion) {
-    return moveAndCollide(motion, false, 0.001D, false, 1);
+    return moveAndCollide(motion, false, 0.001D, false, RECOVERY_ITERATIONS);
   }
 
   public MoveAndCollideResult moveAndCollide(
@@ -682,7 +683,7 @@ public class EntityRigidBody extends Entity {
   private boolean isStableSupport() {
     List<Vec3> supportPoints = findGroundSupportPoints();
     if (supportPoints.isEmpty()) {
-      return true;
+      return false;
     }
     return isComInsideSupportPolygon(supportPoints);
   }
@@ -857,6 +858,80 @@ public class EntityRigidBody extends Entity {
     return deepestRecovery != null && deepestDepth > penetrationSlop() ? deepestRecovery : null;
   }
 
+  private void resolvePenetration() {
+    refreshOrientedBoundingBox();
+    boolean overlapping = false;
+    for (AABB block : collectBlockAABBs(getBoundingBox())) {
+      if (satOBBvsAABB(position(), block) != null) {
+        overlapping = true;
+        break;
+      }
+    }
+    if (!overlapping) {
+      return;
+    }
+
+    if (isPenetrating()) {
+      recoverFromPenetration(false, 0.001D, RECOVERY_ITERATIONS);
+    }
+
+    clampLinearVelocityAgainstPenetration();
+    resolveRotationalContacts();
+  }
+
+  private void clampLinearVelocityAgainstPenetration() {
+    if (bounce > 1.0E-8D) {
+      return;
+    }
+
+    refreshOrientedBoundingBox();
+    for (AABB block : collectBlockAABBs(getBoundingBox())) {
+      SATResult sat = satOBBvsAABB(position(), block);
+      if (sat == null) {
+        continue;
+      }
+
+      double vn = linearVelocity().dot(sat.normal());
+      if (vn < 0.0D) {
+        linearVelocity(linearVelocity().subtract(sat.normal().scale(vn)));
+      }
+    }
+  }
+
+  private void resolveRotationalContacts() {
+    if (bounce > 1.0E-8D) {
+      return;
+    }
+
+    refreshOrientedBoundingBox();
+    for (AABB block : collectBlockAABBs(getBoundingBox())) {
+      SATResult sat = satOBBvsAABB(position(), block);
+      if (sat == null) {
+        continue;
+      }
+
+      Vec3 contact = findContactPoint(position(), block, sat.normal());
+      applyRotationalContactResponse(contact.subtract(position()), sat.normal());
+    }
+  }
+
+  private void applyRotationalContactResponse(Vec3 leverArm, Vec3 normal) {
+    double vn = velocityAtPoint(leverArm).dot(normal);
+    if (vn >= 0.0D) {
+      return;
+    }
+
+    double K = effectiveMassInvAtContact(leverArm, normal);
+    if (K < 1.0E-8D) {
+      return;
+    }
+
+    double j = -vn / K;
+    Vec3 linearBefore = linearVelocity();
+    applyImpulse(normal.scale(j), leverArm);
+    linearVelocity(linearBefore);
+  }
+
   private CastHit castMotionAgainstBlock(Vec3 start, Vec3 motion, AABB block) {
     if (satOBBvsAABB(start, block) != null) {
       return null;
@@ -932,29 +1007,31 @@ public class EntityRigidBody extends Entity {
   private void applyCollisionImpulse(MoveAndCollideResult collision) {
     Vec3 normal = collision.normal();
     Vec3 leverArm = collision.leverArm();
-    boolean flatRest = bounce <= 1.0E-8D && normal.y > 0.7D && isStableSupport();
-    Vec3 impulsePoint = flatRest ? Vec3.ZERO : leverArm;
-    double vn =
-        flatRest ? linearVelocity().dot(normal) : velocityAtPoint(leverArm).dot(normal);
 
-    if (flatRest) {
-      if (vn < 0.0D) {
-        linearVelocity(linearVelocity().subtract(normal.scale(vn)));
+    if (bounce <= 1.0E-8D) {
+      if (isStableSupport() && normal.y > 0.7D) {
+        double comVn = linearVelocity().dot(normal);
+        if (comVn < 0.0D) {
+          linearVelocity(linearVelocity().subtract(normal.scale(comVn)));
+        }
+      } else {
+        applyRotationalContactResponse(leverArm, normal);
       }
       return;
     }
 
+    double vn = velocityAtPoint(leverArm).dot(normal);
     if (vn >= 0.0D) {
       return;
     }
 
-    double K = effectiveMassInvAtContact(impulsePoint, normal);
+    double K = effectiveMassInvAtContact(leverArm, normal);
     if (K < 1.0E-8D) {
       return;
     }
 
     double j = -(1.0 + bounce) * vn / K;
-    applyImpulse(normal.scale(j), impulsePoint);
+    applyImpulse(normal.scale(j), leverArm);
   }
 
   private SATResult satOBBvsAABB(Vec3 center, AABB block) {
