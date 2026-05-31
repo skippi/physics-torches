@@ -1,6 +1,9 @@
 package com.binhjcao.physicstorches.entity;
 
+import com.binhjcao.physicstorches.BoxCollider;
 import com.binhjcao.physicstorches.ModEntityTypes;
+import com.binhjcao.physicstorches.Physics;
+import com.binhjcao.physicstorches.RaycastHit;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -26,7 +29,6 @@ import java.util.Optional;
 public class EntityRigidBody extends Entity {
   public static final double HALF_SIZE = 0.5D;
   public static final double TARGET_REACH = 6.0D;
-  public static final double SURFACE_TOLERANCE = 0.05D;
   public static final double PICK_BBOX_INFLATE = 0.03D;
   private static final double SUPPORT_SURFACE_EPS = 0.06D;
   private static final double STABLE_COM_EPS = 0.05D;
@@ -61,7 +63,7 @@ public class EntityRigidBody extends Entity {
     }
   }
 
-  private final RigidBodyCollisionModel collisionModel;
+  private final BoxCollider collider;
   public static final double GRAVITY = 9.81D; // m/s²
   private static final double BLOCK_FRICTION = 1.0D;
 
@@ -100,14 +102,14 @@ public class EntityRigidBody extends Entity {
 
   public EntityRigidBody(EntityType<? extends EntityRigidBody> type, Level level) {
     super(type, level);
-    collisionModel = createCollisionModel();
+    collider = createCollider();
     setNoGravity(true);
     orientation.identity();
     prevOrientation.identity();
   }
 
-  protected RigidBodyCollisionModel createCollisionModel() {
-    return RigidBodyCollisionModel.cube(HALF_SIZE);
+  protected BoxCollider createCollider() {
+    return BoxCollider.cube(HALF_SIZE);
   }
 
   protected Vec3 collisionCenter() {
@@ -253,7 +255,7 @@ public class EntityRigidBody extends Entity {
   }
 
   public Vec3 inertia() {
-    Vec3 halfExtents = collisionModel.halfExtents();
+    Vec3 halfExtents = collider.halfExtents();
     return boxInertia(mass(), halfExtents.x, halfExtents.y, halfExtents.z);
   }
 
@@ -277,63 +279,8 @@ public class EntityRigidBody extends Entity {
     return sleeping;
   }
 
-  public RigidBodyCollisionModel collisionModel() {
-    return collisionModel;
-  }
-
-  public Optional<RigidBodyCollisionModel.SurfaceHit> raycastSurface(
-      Vec3 rayOrigin, Vec3 rayDirection, float partialTick, double maxReach) {
-    Optional<RigidBodyCollisionModel.SurfaceHit> hit =
-        raycastSurface(rayOrigin, rayDirection, partialTick, maxReach, 0.0D);
-    if (hit.isEmpty() && SURFACE_TOLERANCE > 0.0D) {
-      hit = raycastSurface(rayOrigin, rayDirection, partialTick, maxReach, SURFACE_TOLERANCE);
-    }
-    return hit;
-  }
-
-  public Optional<RigidBodyCollisionModel.SurfaceHit> raycastSurface(
-      Vec3 rayOrigin,
-      Vec3 rayDirection,
-      float partialTick,
-      double maxReach,
-      double surfaceTolerance) {
-    return collisionModel.raycast(
-        getOrientation(partialTick),
-        collisionCenter(),
-        rayOrigin,
-        rayDirection,
-        maxReach,
-        surfaceTolerance);
-  }
-
-  public static Optional<RigidBodyCollisionModel.SurfaceHit> raycastClosest(
-      Level level,
-      AABB searchBox,
-      Vec3 rayOrigin,
-      Vec3 rayDirection,
-      float partialTick,
-      double maxReach) {
-    RigidBodyCollisionModel.SurfaceHit closestHit = null;
-    for (EntityRigidBody body : level.getEntitiesOfClass(EntityRigidBody.class, searchBox)) {
-      Optional<RigidBodyCollisionModel.SurfaceHit> hit =
-          body.raycastSurface(rayOrigin, rayDirection, partialTick, maxReach);
-      if (hit.isEmpty()) {
-        continue;
-      }
-
-      if (closestHit == null
-          || hit.get().worldPoint().distanceToSqr(rayOrigin)
-              < closestHit.worldPoint().distanceToSqr(rayOrigin)) {
-        closestHit = hit.get();
-      }
-    }
-
-    return Optional.ofNullable(closestHit);
-  }
-
-  public static Optional<RigidBodyCollisionModel.SurfaceHit> raycastClosest(
-      Level level, AABB searchBox, PlayerLookRay ray, float partialTick, double maxReach) {
-    return raycastClosest(level, searchBox, ray.origin(), ray.direction(), partialTick, maxReach);
+  public BoxCollider collider() {
+    return collider;
   }
 
   public Quaternionf getOrientation(float partialTick) {
@@ -453,14 +400,21 @@ public class EntityRigidBody extends Entity {
       return false;
     }
 
-    Optional<RigidBodyCollisionModel.SurfaceHit> hit =
-        raycastSurface(ray.origin(), ray.direction(), 1.0F, TARGET_REACH);
+    Optional<RaycastHit> hit =
+        Physics.raycast(
+            level(),
+            getBoundingBox(),
+            ray.origin(),
+            ray.direction(),
+            1.0F,
+            TARGET_REACH,
+            body -> body == this);
     if (hit.isEmpty()) {
       return false;
     }
 
-    RigidBodyCollisionModel.SurfaceHit surfaceHit = hit.get();
-    onSurfaceInput(player, surfaceHit.worldPoint(), surfaceHit.worldNormal());
+    RaycastHit surfaceHit = hit.get();
+    onSurfaceInput(player, surfaceHit.point(), surfaceHit.normal());
     lastSurfaceInputTick = tickCount;
     return true;
   }
@@ -498,7 +452,7 @@ public class EntityRigidBody extends Entity {
 
   private void refreshOrientedBoundingBox() {
     setBoundingBox(
-        collisionModel.orientedBounds(collisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
+        collider.orientedBounds(collisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
   }
 
   protected void applyConstantForces() {
@@ -620,10 +574,10 @@ public class EntityRigidBody extends Entity {
 
     refreshOrientedBoundingBox();
     AABB sweepBounds =
-        collisionModel
+        collider
             .orientedBounds(startPos, orientation, PICK_BBOX_INFLATE)
             .minmax(
-                collisionModel.orientedBounds(
+                collider.orientedBounds(
                     startPos.add(motion), orientation, PICK_BBOX_INFLATE));
 
     CastHit earliest = null;
@@ -737,7 +691,7 @@ public class EntityRigidBody extends Entity {
 
   protected List<Vec3> findGroundSupportPoints() {
     Vec3 center = collisionCenter();
-    Vec3[] corners = collisionModel.worldCorners(center, orientation);
+    Vec3[] corners = collider.worldCorners(center, orientation);
     List<Vec3> supportPoints = new ArrayList<>();
     for (Vec3 corner : corners) {
       if (isCornerSupported(corner)) {
@@ -1088,7 +1042,7 @@ public class EntityRigidBody extends Entity {
   }
 
   private Vec3 findContactPoint(Vec3 center, AABB block, Vec3 normal) {
-    Vec3[] corners = collisionModel.worldCorners(center, orientation);
+    Vec3[] corners = collider.worldCorners(center, orientation);
     List<Vec3> contacts = new ArrayList<>();
     for (Vec3 corner : corners) {
       if (corner.x >= block.minX && corner.x <= block.maxX
@@ -1166,7 +1120,7 @@ public class EntityRigidBody extends Entity {
             (block.maxX - block.minX) * 0.5,
             (block.maxY - block.minY) * 0.5,
             (block.maxZ - block.minZ) * 0.5);
-    Vec3 halfExtents = collisionModel.halfExtents();
+    Vec3 halfExtents = collider.halfExtents();
     Vec3 u0 = toWorldDirection(new Vec3(1, 0, 0));
     Vec3 u1 = toWorldDirection(new Vec3(0, 1, 0));
     Vec3 u2 = toWorldDirection(new Vec3(0, 0, 1));
@@ -1207,7 +1161,7 @@ public class EntityRigidBody extends Entity {
 
   private double maxPointVelocity() {
     double maxSpeed = 0.0D;
-    for (Vec3 corner : collisionModel.worldCorners(collisionCenter(), orientation)) {
+    for (Vec3 corner : collider.worldCorners(collisionCenter(), orientation)) {
       Vec3 r = corner.subtract(collisionCenter());
       maxSpeed = Math.max(maxSpeed, velocityAtPoint(r).length());
     }

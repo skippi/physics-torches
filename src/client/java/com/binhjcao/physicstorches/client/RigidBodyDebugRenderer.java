@@ -1,7 +1,8 @@
 package com.binhjcao.physicstorches.client;
 
+import com.binhjcao.physicstorches.Physics;
+import com.binhjcao.physicstorches.RaycastHit;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
-import com.binhjcao.physicstorches.entity.RigidBodyCollisionModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.gizmos.Gizmos;
@@ -59,7 +60,7 @@ public final class RigidBodyDebugRenderer {
   private static void renderCollisionOutline(EntityRigidBody body, float partialTick) {
     Quaternionf orientation = body.getOrientation(partialTick);
     Vec3 center = body.getPosition(partialTick);
-    Vec3[] corners = body.collisionModel().worldCorners(center, orientation);
+    Vec3[] corners = body.collider().worldCorners(center, orientation);
 
     emitEdge(corners[0], corners[1]);
     emitEdge(corners[1], corners[3]);
@@ -87,14 +88,14 @@ public final class RigidBodyDebugRenderer {
 
     EntityRigidBody.PlayerLookRay ray = EntityRigidBody.PlayerLookRay.from(player, partialTick);
     AABB searchBox = player.getBoundingBox().inflate(EntityRigidBody.TARGET_REACH);
-    Optional<RigidBodyCollisionModel.SurfaceHit> closestHit =
-        EntityRigidBody.raycastClosest(level, searchBox, ray, partialTick, EntityRigidBody.TARGET_REACH);
+    Optional<RaycastHit> closestHit =
+        Physics.raycast(level, searchBox, ray, partialTick, EntityRigidBody.TARGET_REACH);
     if (closestHit.isEmpty()) {
       return;
     }
 
-    Vec3 hitPoint = closestHit.get().worldPoint();
-    Vec3 normal = closestHit.get().worldNormal();
+    Vec3 hitPoint = closestHit.get().point();
+    Vec3 normal = closestHit.get().normal();
     Gizmos.point(hitPoint, HIT_POINT_COLOR, 5.0F);
     Gizmos.arrow(hitPoint, hitPoint.add(normal.scale(0.35D)), HIT_NORMAL_COLOR);
   }

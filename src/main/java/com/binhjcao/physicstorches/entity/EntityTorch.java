@@ -1,5 +1,6 @@
 package com.binhjcao.physicstorches.entity;
 
+import com.binhjcao.physicstorches.BoxCollider;
 import com.binhjcao.physicstorches.ModEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -142,8 +143,8 @@ public class EntityTorch extends EntityRigidBody {
   }
 
   @Override
-  protected RigidBodyCollisionModel createCollisionModel() {
-    return RigidBodyCollisionModel.box(HALF_WIDTH, HALF_HEIGHT, HALF_WIDTH);
+  protected BoxCollider createCollider() {
+    return BoxCollider.box(HALF_WIDTH, HALF_HEIGHT, HALF_WIDTH);
   }
 
   @Override

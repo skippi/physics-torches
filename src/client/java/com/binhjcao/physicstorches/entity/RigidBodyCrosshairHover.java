@@ -1,6 +1,7 @@
 package com.binhjcao.physicstorches.entity;
 
-import com.binhjcao.physicstorches.entity.RigidBodyCollisionModel.SurfaceHit;
+import com.binhjcao.physicstorches.Physics;
+import com.binhjcao.physicstorches.RaycastHit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.phys.AABB;
@@ -46,41 +47,29 @@ public final class RigidBodyCrosshairHover {
       AABB searchBox,
       EntityRigidBody.PlayerLookRay ray,
       float partialTick) {
-    SurfaceHit closestHit = null;
-    EntityRigidBody closestBody = null;
-
-    for (EntityRigidBody body : level.getEntitiesOfClass(EntityRigidBody.class, searchBox)) {
-      if (!body.inputRayPickable()) {
-        continue;
-      }
-
-      Optional<SurfaceHit> hit =
-          body.raycastSurface(ray.origin(), ray.direction(), partialTick, EntityRigidBody.TARGET_REACH);
-      if (hit.isEmpty()) {
-        continue;
-      }
-
-      double dist = hit.get().worldPoint().distanceToSqr(ray.origin());
-      if (closestHit == null || dist < closestHit.worldPoint().distanceToSqr(ray.origin())) {
-        closestHit = hit.get();
-        closestBody = body;
-      }
-    }
-
-    if (closestHit == null || closestBody == null) {
+    Optional<RaycastHit> hit =
+        Physics.raycast(
+            level,
+            searchBox,
+            ray,
+            partialTick,
+            EntityRigidBody.TARGET_REACH,
+            EntityRigidBody::inputRayPickable);
+    if (hit.isEmpty()) {
       return Optional.empty();
     }
 
-    double bodyDistSq = closestHit.worldPoint().distanceToSqr(ray.origin());
+    RaycastHit bodyHit = hit.get();
+    double bodyDistSq = bodyHit.point().distanceToSqr(ray.origin());
     if (bodyDistSq >= closestBlockHitDistanceSq(client, ray)) {
       return Optional.empty();
     }
 
-    if (closerEntityBlocksBody(client, ray, closestBody, bodyDistSq)) {
+    if (closerEntityBlocksBody(client, ray, bodyHit.body(), bodyDistSq)) {
       return Optional.empty();
     }
 
-    return Optional.of(closestBody);
+    return Optional.of(bodyHit.body());
   }
 
   private static double closestBlockHitDistanceSq(Minecraft client, EntityRigidBody.PlayerLookRay ray) {
