@@ -64,6 +64,7 @@ public class EntityRigidBody extends Entity {
 
   private static final RigidBodyCollisionModel COLLISION = RigidBodyCollisionModel.cube(HALF_SIZE);
   public static final double GRAVITY = 9.81D; // m/s²
+  private static final double BLOCK_FRICTION = 1.0D;
 
   private static final EntityDataAccessor<Float> DATA_ORIENT_X =
       SynchedEntityData.defineId(EntityRigidBody.class, EntityDataSerializers.FLOAT);
@@ -83,6 +84,7 @@ public class EntityRigidBody extends Entity {
   private double angularDamp = 0.0D;
   private double gravityScale = 1.0D;
   private double bounce = 0.0D;
+  private double friction = 0.0D;
   private double contactMaxAllowedPenetration = 0.01D;
   private double penetrationSlop = 0.02D;
   private double sleepThreshold = 0.03D;
@@ -188,6 +190,14 @@ public class EntityRigidBody extends Entity {
 
   public void bounce(double bounce) {
     this.bounce = Math.clamp(bounce, 0.0D, 1.0D);
+  }
+
+  public double friction() {
+    return friction;
+  }
+
+  public void friction(double friction) {
+    this.friction = Math.clamp(friction, 0.0D, 1.0D);
   }
 
   public double contactMaxAllowedPenetration() {
@@ -340,6 +350,7 @@ public class EntityRigidBody extends Entity {
     angularDamp(input.getDoubleOr("angular_damp", angularDamp));
     gravityScale(input.getDoubleOr("gravity_scale", gravityScale));
     bounce(input.getDoubleOr("bounce", bounce));
+    friction(input.getDoubleOr("friction", friction));
     contactMaxAllowedPenetration(
         input.getDoubleOr("contact_max_allowed_penetration", contactMaxAllowedPenetration));
     penetrationSlop(input.getDoubleOr("penetration_slop", penetrationSlop));
@@ -369,6 +380,7 @@ public class EntityRigidBody extends Entity {
     output.putDouble("angular_damp", angularDamp);
     output.putDouble("gravity_scale", gravityScale);
     output.putDouble("bounce", bounce);
+    output.putDouble("friction", friction);
     output.putDouble("contact_max_allowed_penetration", contactMaxAllowedPenetration);
     output.putDouble("penetration_slop", penetrationSlop);
     output.putDouble("sleep_threshold", sleepThreshold);
@@ -912,14 +924,33 @@ public class EntityRigidBody extends Entity {
     }
 
     refreshOrientedBoundingBox();
+    boolean floorFrictionApplied = false;
     for (AABB block : collectBlockAABBs(getBoundingBox())) {
       SATResult sat = satOBBvsAABB(position(), block);
       if (sat == null) {
         continue;
       }
 
-      Vec3 contact = findContactPoint(position(), block, sat.normal());
-      applyRotationalContactResponse(contact.subtract(position()), sat.normal());
+      Vec3 normal = sat.normal();
+      if (normal.y > 0.7D) {
+        if (floorFrictionApplied) {
+          continue;
+        }
+
+        if (!isStableSupport()) {
+          Vec3 contact = findContactPoint(position(), block, normal);
+          applyRotationalContactResponse(contact.subtract(position()), normal);
+        }
+
+        applyGodotComFriction(normal);
+        floorFrictionApplied = true;
+        continue;
+      }
+
+      Vec3 contact = findContactPoint(position(), block, normal);
+      Vec3 leverArm = contact.subtract(position());
+      applyRotationalContactResponse(leverArm, normal);
+      applyGodotPointFriction(leverArm, normal);
     }
   }
 
@@ -938,6 +969,61 @@ public class EntityRigidBody extends Entity {
     Vec3 linearBefore = linearVelocity();
     applyImpulse(normal.scale(j), leverArm);
     linearVelocity(linearBefore);
+  }
+
+  private double effectiveContactFriction() {
+    return Math.min(friction, BLOCK_FRICTION);
+  }
+
+  private void applyGodotComFriction(Vec3 normal) {
+    double contactFriction = effectiveContactFriction();
+    if (contactFriction <= 1.0E-8D) {
+      return;
+    }
+
+    Vec3 velocity = linearVelocity();
+    Vec3 tangent = velocity.subtract(normal.scale(velocity.dot(normal)));
+    if (tangent.lengthSqr() > 1.0E-8D) {
+      linearVelocity(velocity.subtract(tangent.scale(contactFriction)));
+    }
+
+    applyGodotAngularFriction(contactFriction);
+  }
+
+  private void applyGodotPointFriction(Vec3 leverArm, Vec3 normal) {
+    double contactFriction = effectiveContactFriction();
+    if (contactFriction <= 1.0E-8D) {
+      return;
+    }
+
+    Vec3 velocity = velocityAtPoint(leverArm);
+    Vec3 tangent = velocity.subtract(normal.scale(velocity.dot(normal)));
+    if (tangent.lengthSqr() > 1.0E-8D) {
+      applyContactVelocityDelta(leverArm, tangent.scale(-contactFriction));
+    }
+  }
+
+  private void applyGodotAngularFriction(double contactFriction) {
+    if (angularVelocity().lengthSqr() <= 1.0E-8D) {
+      return;
+    }
+
+    angularVelocity(angularVelocity().scale(1.0D - contactFriction));
+  }
+
+  private void applyContactVelocityDelta(Vec3 leverArm, Vec3 deltaV) {
+    double deltaSpeed = deltaV.length();
+    if (deltaSpeed <= 1.0E-8D) {
+      return;
+    }
+
+    Vec3 dir = deltaV.scale(1.0D / deltaSpeed);
+    double K = effectiveMassInvAtContact(leverArm, dir);
+    if (K <= 1.0E-8D) {
+      return;
+    }
+
+    applyImpulse(dir.scale(deltaSpeed / K), leverArm);
   }
 
   private CastHit castMotionAgainstBlock(Vec3 start, Vec3 motion, AABB block) {

@@ -32,6 +32,7 @@ public final class PhysicsTorchesCommands {
     registerTest("physicstorches:test_torque", PhysicsTorchesCommands::runTestTorque);
     registerTest("physicstorches:test_linear", PhysicsTorchesCommands::runTestLinear);
     registerTest("physicstorches:test_collision", PhysicsTorchesCommands::runTestCollision);
+    registerTest("physicstorches:test_friction", PhysicsTorchesCommands::runTestFriction);
   }
 
   private PhysicsTorchesCommands() {}
@@ -161,6 +162,28 @@ public final class PhysicsTorchesCommands {
       }
     }
     player.level().addFreshEntity(new EntityTestCollision(player.level()));
+  }
+
+  private static void runTestFriction(ServerPlayer player) {
+    class EntityTestFriction extends EntityRigidBody {
+      public EntityTestFriction(Level level) {
+        super(level, cubePositionInFrontOf(player).add(0, 5, 0));
+        mass(0.25);
+        linearDamp(0.1);
+        angularDamp(0.1);
+        friction(0.4);
+        bounce(0);
+      }
+
+      @Override
+      protected void onSurfaceInput(Player player, Vec3 surfacePosition, Vec3 surfaceNormal) {
+        Vec3 impulse =
+            PlayerLookRay.from(player, 1.0F).normalizedDirection().scale(2.5D);
+        Vec3 leverArm = surfacePosition.subtract(position());
+        applyImpulse(impulse, leverArm);
+      }
+    }
+    player.level().addFreshEntity(new EntityTestFriction(player.level()));
   }
 
   private static Vec3 cubePositionInFrontOf(ServerPlayer player) {
