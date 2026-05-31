@@ -1,8 +1,10 @@
 package com.binhjcao.physicstorches;
 
 import com.binhjcao.physicstorches.entity.EntityTorch;
+import com.binhjcao.physicstorches.entity.TorchLight;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -16,6 +18,7 @@ public class PhysicsTorchesMod implements ModInitializer {
 
   @Override
   public void onInitialize() {
+    ServerLevelEvents.LOAD.register((server, level) -> TorchLight.onLevelLoad(level));
     PhysicsTorchesCommands.register();
     PayloadTypeRegistry.serverboundPlay().register(DropTorchPayload.TYPE, DropTorchPayload.CODEC);
 

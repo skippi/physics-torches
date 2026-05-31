@@ -269,12 +269,14 @@ public class EntityTorch extends EntityRigidBody {
   protected void readAdditionalSaveData(ValueInput input) {
     super.readAdditionalSaveData(input);
     input.read("BlockState", BlockState.CODEC).ifPresent(this::setBlockState);
+    input.read("LightBlockPos", BlockPos.CODEC).ifPresent(this::setLightBlockPos);
   }
 
   @Override
   protected void addAdditionalSaveData(ValueOutput output) {
     super.addAdditionalSaveData(output);
     output.store("BlockState", BlockState.CODEC, getBlockState());
+    output.storeNullable("LightBlockPos", BlockPos.CODEC, lightBlockPos);
   }
 
   @Override
