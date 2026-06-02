@@ -117,92 +117,12 @@ public class EntityRigidBody extends Entity {
     syncEntityFromRigidBody();
   }
 
-  public double mass() {
-    return rigidBody.mass();
-  }
-
-  public void mass(double mass) {
-    rigidBody.mass(mass);
-  }
-
-  public double linearDamp() {
-    return rigidBody.linearDamp();
-  }
-
-  public void linearDamp(double linearDamp) {
-    rigidBody.linearDamp(linearDamp);
-  }
-
-  public double angularDamp() {
-    return rigidBody.angularDamp();
-  }
-
-  public void angularDamp(double angularDamp) {
-    rigidBody.angularDamp(angularDamp);
-  }
-
-  public Vec3 angularVelocity() {
-    return rigidBody.angularVelocity();
-  }
-
-  public void angularVelocity(Vec3 angularVelocity) {
-    rigidBody.angularVelocity(angularVelocity);
-  }
-
-  public double gravityScale() {
-    return rigidBody.gravityScale();
-  }
-
-  public void gravityScale(double gravityScale) {
-    rigidBody.gravityScale(gravityScale);
-  }
-
-  public double bounce() {
-    return rigidBody.bounce();
-  }
-
-  public void bounce(double bounce) {
-    rigidBody.bounce(bounce);
-  }
-
-  public double friction() {
-    return rigidBody.friction();
-  }
-
-  public void friction(double friction) {
-    rigidBody.friction(friction);
-  }
-
-  public Vec3 linearVelocity() {
-    return rigidBody.linearVelocity();
-  }
-
-  public void linearVelocity(Vec3 linearVelocity) {
-    rigidBody.linearVelocity(linearVelocity);
-  }
-
-  public boolean linearLock() {
-    return rigidBody.linearLock();
-  }
-
-  public void linearLock(boolean lock) {
-    rigidBody.linearLock(lock);
-  }
-
   public boolean inputRayPickable() {
     return inputRayPickable;
   }
 
   public void inputRayPickable(boolean inputRayPickable) {
     this.inputRayPickable = inputRayPickable;
-  }
-
-  public boolean isSleeping() {
-    return rigidBody.isSleeping();
-  }
-
-  public Collider collider() {
-    return rigidBody.collider();
   }
 
   public Quaternionf getOrientation(float partialTick) {
@@ -224,14 +144,14 @@ public class EntityRigidBody extends Entity {
 
   @Override
   protected void readAdditionalSaveData(ValueInput input) {
-    mass(input.getDoubleOr("mass", mass()));
-    linearDamp(input.getDoubleOr("linear_damp", linearDamp()));
-    angularDamp(input.getDoubleOr("angular_damp", angularDamp()));
-    gravityScale(input.getDoubleOr("gravity_scale", gravityScale()));
-    bounce(input.getDoubleOr("bounce", bounce()));
-    friction(input.getDoubleOr("friction", friction()));
-    input.read("angular_velocity", Vec3.CODEC).ifPresent(this::angularVelocity);
-    input.read("linear_velocity", Vec3.CODEC).ifPresent(this::linearVelocity);
+    rigidBody.mass(input.getDoubleOr("mass", rigidBody.mass()));
+    rigidBody.linearDamp(input.getDoubleOr("linear_damp", rigidBody.linearDamp()));
+    rigidBody.angularDamp(input.getDoubleOr("angular_damp", rigidBody.angularDamp()));
+    rigidBody.gravityScale(input.getDoubleOr("gravity_scale", rigidBody.gravityScale()));
+    rigidBody.bounce(input.getDoubleOr("bounce", rigidBody.bounce()));
+    rigidBody.friction(input.getDoubleOr("friction", rigidBody.friction()));
+    input.read("angular_velocity", Vec3.CODEC).ifPresent(rigidBody::angularVelocity);
+    input.read("linear_velocity", Vec3.CODEC).ifPresent(rigidBody::linearVelocity);
     var orientation = rigidBody.orientation();
     orientation.set(
         input.getFloatOr("orient_x", orientation.x),
@@ -240,12 +160,12 @@ public class EntityRigidBody extends Entity {
         input.getFloatOr("orient_w", orientation.w));
     orientation.normalize();
     rigidBody.prevOrientation().set(orientation);
-    if (input.getBooleanOr("sleeping", isSleeping())) {
+    if (input.getBooleanOr("sleeping", rigidBody.isSleeping())) {
       enterSleep();
     } else {
       wake();
     }
-    linearLock(input.getBooleanOr("linear_lock", linearLock()));
+    rigidBody.linearLock(input.getBooleanOr("linear_lock", rigidBody.linearLock()));
     inputRayPickable = input.getBooleanOr("input_ray_pickable", inputRayPickable);
     syncToRigidBody();
     syncOrientationData();
@@ -253,21 +173,21 @@ public class EntityRigidBody extends Entity {
 
   @Override
   protected void addAdditionalSaveData(ValueOutput output) {
-    output.putDouble("mass", mass());
-    output.putDouble("linear_damp", linearDamp());
-    output.putDouble("angular_damp", angularDamp());
-    output.putDouble("gravity_scale", gravityScale());
-    output.putDouble("bounce", bounce());
-    output.putDouble("friction", friction());
-    output.store("angular_velocity", Vec3.CODEC, angularVelocity());
-    output.store("linear_velocity", Vec3.CODEC, linearVelocity());
+    output.putDouble("mass", rigidBody.mass());
+    output.putDouble("linear_damp", rigidBody.linearDamp());
+    output.putDouble("angular_damp", rigidBody.angularDamp());
+    output.putDouble("gravity_scale", rigidBody.gravityScale());
+    output.putDouble("bounce", rigidBody.bounce());
+    output.putDouble("friction", rigidBody.friction());
+    output.store("angular_velocity", Vec3.CODEC, rigidBody.angularVelocity());
+    output.store("linear_velocity", Vec3.CODEC, rigidBody.linearVelocity());
     var orientation = rigidBody.orientation();
     output.putFloat("orient_x", orientation.x);
     output.putFloat("orient_y", orientation.y);
     output.putFloat("orient_z", orientation.z);
     output.putFloat("orient_w", orientation.w);
-    output.putBoolean("sleeping", isSleeping());
-    output.putBoolean("linear_lock", linearLock());
+    output.putBoolean("sleeping", rigidBody.isSleeping());
+    output.putBoolean("linear_lock", rigidBody.linearLock());
     output.putBoolean("input_ray_pickable", inputRayPickable);
   }
 
@@ -369,7 +289,9 @@ public class EntityRigidBody extends Entity {
 
   private void refreshOrientedBoundingBox() {
     setBoundingBox(
-        collider().orientedBounds(collisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
+        rigidBody
+            .collider()
+            .orientedBounds(collisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
   }
 
   protected void wake() {

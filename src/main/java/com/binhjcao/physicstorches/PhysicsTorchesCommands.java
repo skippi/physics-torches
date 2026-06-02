@@ -112,8 +112,8 @@ public final class PhysicsTorchesCommands {
     class EntityTestTorque extends EntityRigidBody {
       public EntityTestTorque(Level level) {
         super(level, cubePositionInFrontOf(player));
-        linearLock(true);
-        angularDamp(0.3D);
+        rigidBody().linearLock(true);
+        rigidBody().angularDamp(0.3D);
       }
 
       @Override
@@ -130,7 +130,7 @@ public final class PhysicsTorchesCommands {
     class EntityTestLinear extends EntityRigidBody {
       public EntityTestLinear(Level level) {
         super(level, cubePositionInFrontOf(player));
-        gravityScale(0);
+        rigidBody().gravityScale(0);
       }
 
       @Override
@@ -148,9 +148,9 @@ public final class PhysicsTorchesCommands {
     class EntityTestCollision extends EntityRigidBody {
       public EntityTestCollision(Level level) {
         super(level, cubePositionInFrontOf(player).add(0, 5, 0));
-        linearDamp(0.1);
-        angularDamp(0.1);
-        bounce(0);
+        rigidBody().linearDamp(0.1);
+        rigidBody().angularDamp(0.1);
+        rigidBody().bounce(0);
       }
 
       @Override
@@ -168,11 +168,11 @@ public final class PhysicsTorchesCommands {
     class EntityTestFriction extends EntityRigidBody {
       public EntityTestFriction(Level level) {
         super(level, cubePositionInFrontOf(player).add(0, 5, 0));
-        mass(0.25);
-        linearDamp(0.1);
-        angularDamp(0.1);
-        friction(0.4);
-        bounce(0);
+        rigidBody().mass(0.25);
+        rigidBody().linearDamp(0.1);
+        rigidBody().angularDamp(0.1);
+        rigidBody().friction(0.4);
+        rigidBody().bounce(0);
       }
 
       @Override
@@ -215,8 +215,8 @@ public final class PhysicsTorchesCommands {
       Quaternionf initialOrientation =
           initialOrientations != null ? initialOrientations[i] : null;
       EntityRigidBody body = new EntityRigidBody(player.level(), position, initialOrientation);
-      body.gravityScale(0);
-      body.angularVelocity(bodyAxes[i].scale(2.5D));
+      body.rigidBody().gravityScale(0);
+      body.rigidBody().angularVelocity(bodyAxes[i].scale(2.5D));
       player.level().addFreshEntity(body);
     }
   }

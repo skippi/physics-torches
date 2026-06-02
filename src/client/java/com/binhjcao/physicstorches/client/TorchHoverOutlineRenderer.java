@@ -34,7 +34,7 @@ public final class TorchHoverOutlineRenderer {
   private static void renderCollisionOutline(EntityRigidBody body, float partialTick, float lineWidth) {
     Quaternionf orientation = body.getOrientation(partialTick);
     Vec3 center = body.getPosition(partialTick);
-    Vec3[] corners = body.collider().worldCorners(center, orientation, OUTLINE_INFLATE);
+    Vec3[] corners = body.rigidBody().collider().worldCorners(center, orientation, OUTLINE_INFLATE);
 
     emitEdge(corners[0], corners[1], lineWidth);
     emitEdge(corners[1], corners[3], lineWidth);

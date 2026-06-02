@@ -48,10 +48,10 @@ public class EntityTorch extends EntityRigidBody {
 
   public EntityTorch(EntityType<? extends EntityTorch> type, Level level) {
     super(type, level);
-    mass(0.5D);
-    linearDamp(0.6D);
-    angularDamp(0.05D);
-    friction(0.5D);
+    rigidBody().mass(0.5D);
+    rigidBody().linearDamp(0.6D);
+    rigidBody().angularDamp(0.05D);
+    rigidBody().friction(0.5D);
     inputRayPickable(true);
   }
 
@@ -77,11 +77,14 @@ public class EntityTorch extends EntityRigidBody {
     EntityTorch torch = new EntityTorch(player.level(), blockState, position);
     player.level().addFreshEntity(torch);
     torch.fling(look);
-    torch.linearVelocity(
-        torch
-            .linearVelocity()
-            .add(
-                playerDeltaMovement.scale(player.level().tickRateManager().tickrate())));
+    torch
+        .rigidBody()
+        .linearVelocity(
+            torch
+                .rigidBody()
+                .linearVelocity()
+                .add(
+                    playerDeltaMovement.scale(player.level().tickRateManager().tickrate())));
     if (!player.isCreative()) {
       stack.shrink(1);
     }
@@ -98,7 +101,7 @@ public class EntityTorch extends EntityRigidBody {
   public void fling(Vec3 direction) {
     Vec3 dir = direction.normalize();
     wake();
-    linearVelocity(dir.scale(THROW_SPEED).add(0.0D, THROW_LIFT, 0.0D));
+    rigidBody().linearVelocity(dir.scale(THROW_SPEED).add(0.0D, THROW_LIFT, 0.0D));
     Vec3 leverArm = rigidBody().toWorldDirection(new Vec3(0.0D, -HALF_HEIGHT, 0.0D));
     var random = level().getRandom();
     var variance = new Vec3(random.nextDouble(), random.nextDouble(), random.nextDouble()).scale(0.2).subtract(0.4);

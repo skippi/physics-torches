@@ -71,7 +71,7 @@ public final class RigidBodyDebugRenderer {
   private static void renderCollisionOutline(EntityRigidBody body, float partialTick) {
     Quaternionf orientation = body.getOrientation(partialTick);
     Vec3 center = body.getPosition(partialTick);
-    Vec3[] corners = body.collider().worldCorners(center, orientation);
+    Vec3[] corners = body.rigidBody().collider().worldCorners(center, orientation);
 
     emitEdge(corners[0], corners[1]);
     emitEdge(corners[1], corners[3]);
@@ -93,7 +93,7 @@ public final class RigidBodyDebugRenderer {
 
   private static void renderContactPoints(ClientLevel level) {
     for (Entity entity : level.entitiesForRendering()) {
-      if (!(entity instanceof EntityRigidBody rigidBody) || rigidBody.isSleeping()) {
+      if (!(entity instanceof EntityRigidBody rigidBody) || rigidBody.rigidBody().isSleeping()) {
         continue;
       }
       for (ContactManifold manifold : Physics.findContactManifoldsForEntity(rigidBody, level)) {

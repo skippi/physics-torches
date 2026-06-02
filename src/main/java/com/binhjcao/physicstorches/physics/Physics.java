@@ -192,7 +192,7 @@ public final class Physics {
       double maxDistance) {
     Vec3 center = new Vec3(body.getX(), body.getY(), body.getZ());
     Quaternionf orientation = body.getOrientation(partialTick);
-    Collider collider = body.collider();
+    Collider collider = body.rigidBody().collider();
     Optional<ColliderHit> hit =
         raycastCollider(collider, orientation, center, origin, direction, maxDistance);
     if (hit.isEmpty() && SURFACE_TOLERANCE > 0.0D) {
