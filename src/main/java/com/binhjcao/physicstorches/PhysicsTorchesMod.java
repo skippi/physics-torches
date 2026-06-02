@@ -5,6 +5,8 @@ import com.binhjcao.physicstorches.entity.EntityTorch;
 import com.binhjcao.physicstorches.entity.LevelRigidBodyRegistry;
 import com.binhjcao.physicstorches.entity.TorchLight;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
+import com.binhjcao.physicstorches.physics.Physics;
+
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;

@@ -176,84 +176,8 @@ public class EntityTorch extends EntityRigidBody {
     super.tick();
 
     if (!level().isClientSide()) {
-      //applyGroundSettling();
       TorchLight.update(this);
     }
-  }
-
-  private void applyGroundSettling() {
-    if (isSleeping() || findGroundSupportPoints().isEmpty()) {
-      return;
-    }
-
-    if (isRestingOnFace()) {
-      dampMicroWobble();
-      return;
-    }
-
-    double motion = linearVelocity().length() + angularVelocity().length();
-    if (motion > 1.2D) {
-      return;
-    }
-
-    Vec3 faceDown = nearestFaceDownDirection();
-    Vec3 tipAxis = faceDown.cross(WORLD_DOWN);
-    if (tipAxis.lengthSqr() > 1.0E-10D) {
-      applyTorque(tipAxis.normalize().scale(SETTLE_TORQUE));
-    }
-
-    angularVelocity(angularVelocity().scale(0.75D));
-  }
-
-  private boolean isRestingOnFace() {
-    if (findGroundSupportPoints().size() < minimumStableSupportPoints()) {
-      return false;
-    }
-
-    for (double axis : new double[] {1.0D, -1.0D}) {
-      if (Math.abs(toWorldDirection(new Vec3(axis, 0.0D, 0.0D)).dot(WORLD_UP)) > FACE_FLAT_DOT) {
-        return true;
-      }
-      if (Math.abs(toWorldDirection(new Vec3(0.0D, axis, 0.0D)).dot(WORLD_UP)) > FACE_FLAT_DOT) {
-        return true;
-      }
-      if (Math.abs(toWorldDirection(new Vec3(0.0D, 0.0D, axis)).dot(WORLD_UP)) > FACE_FLAT_DOT) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private Vec3 nearestFaceDownDirection() {
-    Vec3 best = WORLD_DOWN;
-    double bestDot = -2.0D;
-    for (double axis : new double[] {1.0D, -1.0D}) {
-      for (Vec3 local :
-          new Vec3[] {
-            new Vec3(axis, 0.0D, 0.0D),
-            new Vec3(0.0D, axis, 0.0D),
-            new Vec3(0.0D, 0.0D, axis)
-          }) {
-        Vec3 world = toWorldDirection(local);
-        double dot = world.dot(WORLD_DOWN);
-        if (dot > bestDot) {
-          bestDot = dot;
-          best = world;
-        }
-      }
-    }
-    return best;
-  }
-
-  private void dampMicroWobble() {
-    double threshold = Physics.SLEEP_THRESHOLD;
-    if (linearVelocity().lengthSqr() + angularVelocity().lengthSqr() <= threshold * threshold * 4.0D) {
-      linearVelocity(Vec3.ZERO);
-      angularVelocity(Vec3.ZERO);
-      return;
-    }
-
-    angularVelocity(angularVelocity().scale(0.8D));
   }
 
   @Override

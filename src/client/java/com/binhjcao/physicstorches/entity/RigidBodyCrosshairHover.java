@@ -1,7 +1,8 @@
 package com.binhjcao.physicstorches.entity;
 
-import com.binhjcao.physicstorches.Physics;
 import com.binhjcao.physicstorches.RaycastHit;
+import com.binhjcao.physicstorches.physics.Physics;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.phys.AABB;

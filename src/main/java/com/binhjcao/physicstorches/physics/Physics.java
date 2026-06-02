@@ -26,11 +26,6 @@ public final class Physics {
   public static final int VELOCITY_SOLVER_ITERATIONS = 16;
   public static final int POSITION_SOLVER_ITERATIONS = 4;
 
-  public static ArrayList<ContactManifold> findContactManifolds(Level level) {
-    float dt = 1.0F / 20.0F;
-    return findContactManifolds(BodyAccumulationPhase.findBodies(level, dt));
-  }
-
   public static ArrayList<ContactManifold> findContactManifoldsForEntity(
       EntityRigidBody entity, Level level) {
     var manifolds = new ArrayList<ContactManifold>();
