@@ -6,6 +6,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
+import com.binhjcao.physicstorches.physics.NarrowPhase;
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 class NarrowPhaseTest {
   private static final double EPS = 1.0E-5D;
 

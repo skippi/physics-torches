@@ -1,4 +1,4 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 public record BroadPhasePair(
   RigidBody a,

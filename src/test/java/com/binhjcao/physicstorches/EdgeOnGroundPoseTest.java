@@ -7,6 +7,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.junit.jupiter.api.Test;
 
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 class EdgeOnGroundPoseTest {
   private static final double EPS = 1.0E-4D;
   private static final double GROUND_TOP_Y = 1.0D;

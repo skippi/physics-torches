@@ -1,4 +1,4 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,6 +6,9 @@ import java.util.Optional;
 
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+
+import com.binhjcao.physicstorches.Collider;
+import com.binhjcao.physicstorches.OrientedTransform;
 
 public class NarrowPhase {
   private record SatResult(Vec3 normal, double depth) {}

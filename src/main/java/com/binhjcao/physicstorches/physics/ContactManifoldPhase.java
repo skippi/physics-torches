@@ -1,10 +1,13 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+
+import com.binhjcao.physicstorches.Collider;
+import com.binhjcao.physicstorches.OrientedTransform;
 
 public class ContactManifoldPhase {
   private static final Vec3[] LOCAL_FACE_NORMALS = {

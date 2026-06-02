@@ -8,6 +8,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
+import com.binhjcao.physicstorches.physics.BodyIntegrationPhase;
+import com.binhjcao.physicstorches.physics.ContactConstraint;
+import com.binhjcao.physicstorches.physics.ContinuousCollisionPhase;
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 class ContinuousCollisionPhaseTest {
   private static final double DT = 1.0D / 20.0D;
 

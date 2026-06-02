@@ -3,7 +3,8 @@ package com.binhjcao.physicstorches.entity;
 import com.binhjcao.physicstorches.BoxCollider;
 import com.binhjcao.physicstorches.Collider;
 import com.binhjcao.physicstorches.ModEntityTypes;
-import com.binhjcao.physicstorches.Physics;
+import com.binhjcao.physicstorches.physics.Physics;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;

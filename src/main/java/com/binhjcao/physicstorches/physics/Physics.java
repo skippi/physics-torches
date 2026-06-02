@@ -1,7 +1,10 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
+import com.binhjcao.physicstorches.Collider;
+import com.binhjcao.physicstorches.RaycastHit;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
 import com.binhjcao.physicstorches.entity.LevelRigidBodyRegistry;
+
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;

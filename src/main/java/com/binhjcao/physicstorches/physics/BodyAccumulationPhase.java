@@ -1,7 +1,8 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
 import com.binhjcao.physicstorches.entity.LevelRigidBodyRegistry;
+
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;

@@ -1,4 +1,4 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 public class BodyIntegrationPhase {
   public static void integrateVelocity(RigidBody body, double dt) {

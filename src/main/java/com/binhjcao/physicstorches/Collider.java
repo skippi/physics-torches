@@ -4,6 +4,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
+import com.binhjcao.physicstorches.BoxRayIntersection.LocalHit;
+
 import java.util.Optional;
 
 public abstract class Collider {

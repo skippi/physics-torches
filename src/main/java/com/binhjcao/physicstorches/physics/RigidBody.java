@@ -1,9 +1,13 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import com.binhjcao.physicstorches.BlockCollider;
+import com.binhjcao.physicstorches.BoxCollider;
+import com.binhjcao.physicstorches.Collider;
 
 public class RigidBody {
   private final Collider collider;

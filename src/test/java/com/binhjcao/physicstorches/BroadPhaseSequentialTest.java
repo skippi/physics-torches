@@ -7,6 +7,10 @@ import java.util.List;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
+import com.binhjcao.physicstorches.physics.BroadPhasePair;
+import com.binhjcao.physicstorches.physics.BroadPhaseSequential;
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 class BroadPhaseSequentialTest {
   @Test
   void FindActiveBodies_ReturnsNoPairs_BodyListIsEmpty() {

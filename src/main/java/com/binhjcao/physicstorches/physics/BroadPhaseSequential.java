@@ -1,4 +1,4 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 import java.util.ArrayList;
 import java.util.List;

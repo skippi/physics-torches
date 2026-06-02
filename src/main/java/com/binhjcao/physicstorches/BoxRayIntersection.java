@@ -4,15 +4,15 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Optional;
 
-final class BoxRayIntersection {
+public final class BoxRayIntersection {
   private static final double FACE_EPSILON = 1.0E-4D;
   private static final double RAY_EPSILON = 1.0E-8D;
 
-  record LocalHit(Vec3 point, Vec3 outwardNormal) {}
+  public record LocalHit(Vec3 point, Vec3 outwardNormal) {}
 
   private BoxRayIntersection() {}
 
-  static Optional<LocalHit> intersect(
+  public static Optional<LocalHit> intersect(
       Vec3 origin,
       Vec3 direction,
       double halfX,

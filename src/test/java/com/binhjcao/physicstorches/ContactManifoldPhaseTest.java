@@ -8,6 +8,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
+import com.binhjcao.physicstorches.physics.ContactManifoldPhase;
+import com.binhjcao.physicstorches.physics.NarrowPhase;
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 class ContactManifoldPhaseTest {
   private static final double EPS = 1.0E-5D;
   private static final double LOOSE_EPS = 0.15D;

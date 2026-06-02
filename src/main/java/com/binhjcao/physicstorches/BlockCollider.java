@@ -4,6 +4,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
+import com.binhjcao.physicstorches.Collider.SurfaceHit;
+
 import java.util.Optional;
 
 public final class BlockCollider extends Collider {

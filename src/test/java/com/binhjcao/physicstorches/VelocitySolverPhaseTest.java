@@ -7,6 +7,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.Test;
 
+import com.binhjcao.physicstorches.physics.ContactConstraint;
+import com.binhjcao.physicstorches.physics.ContactConstraintPhase;
+import com.binhjcao.physicstorches.physics.ContactManifoldPhase;
+import com.binhjcao.physicstorches.physics.NarrowPhase;
+import com.binhjcao.physicstorches.physics.RigidBody;
+import com.binhjcao.physicstorches.physics.VelocitySolverPhase;
+
 class VelocitySolverPhaseTest {
   private static final double EPS = 1.0E-5D;
 

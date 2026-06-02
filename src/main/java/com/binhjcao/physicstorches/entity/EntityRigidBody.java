@@ -3,9 +3,10 @@ package com.binhjcao.physicstorches.entity;
 import com.binhjcao.physicstorches.BoxCollider;
 import com.binhjcao.physicstorches.Collider;
 import com.binhjcao.physicstorches.ModEntityTypes;
-import com.binhjcao.physicstorches.Physics;
 import com.binhjcao.physicstorches.RaycastHit;
-import com.binhjcao.physicstorches.RigidBody;
+import com.binhjcao.physicstorches.physics.Physics;
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;

@@ -1,9 +1,10 @@
 package com.binhjcao.physicstorches.client;
 
-import com.binhjcao.physicstorches.ContactManifold;
-import com.binhjcao.physicstorches.Physics;
 import com.binhjcao.physicstorches.RaycastHit;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.binhjcao.physicstorches.physics.ContactManifold;
+import com.binhjcao.physicstorches.physics.Physics;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.gizmos.Gizmos;

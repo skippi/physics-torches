@@ -3,6 +3,8 @@ package com.binhjcao.physicstorches;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
+import com.binhjcao.physicstorches.physics.RigidBody;
+
 final class EdgeOnGroundPose {
   private static final double HALF = 0.5D;
   private static final double GROUND_TOP_Y = 1.0D;

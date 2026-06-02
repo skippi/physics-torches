@@ -1,9 +1,11 @@
-package com.binhjcao.physicstorches;
+package com.binhjcao.physicstorches.physics;
 
 import java.util.ArrayList;
 
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+
+import com.binhjcao.physicstorches.OrientedTransform;
 
 public class ContactConstraintPhase {
   private static final float RESTITUTION_VELOCITY_THRESHOLD = 0.1F;
