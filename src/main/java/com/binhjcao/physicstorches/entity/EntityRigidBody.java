@@ -149,22 +149,6 @@ public class EntityRigidBody extends Entity {
     rigidBody.angularVelocity(angularVelocity);
   }
 
-  public Vec3 constantForce() {
-    return rigidBody.constantForce();
-  }
-
-  public void constantForce(Vec3 constantForce) {
-    rigidBody.constantForce(constantForce);
-  }
-
-  public Vec3 constantTorque() {
-    return rigidBody.constantTorque();
-  }
-
-  public void constantTorque(Vec3 constantTorque) {
-    rigidBody.constantTorque(constantTorque);
-  }
-
   public double gravityScale() {
     return rigidBody.gravityScale();
   }
@@ -195,10 +179,6 @@ public class EntityRigidBody extends Entity {
 
   public void linearVelocity(Vec3 linearVelocity) {
     rigidBody.linearVelocity(linearVelocity);
-  }
-
-  public Vec3 inertia() {
-    return rigidBody.inertia();
   }
 
   public boolean linearLock() {
@@ -252,8 +232,6 @@ public class EntityRigidBody extends Entity {
     friction(input.getDoubleOr("friction", friction()));
     input.read("angular_velocity", Vec3.CODEC).ifPresent(this::angularVelocity);
     input.read("linear_velocity", Vec3.CODEC).ifPresent(this::linearVelocity);
-    input.read("constant_force", Vec3.CODEC).ifPresent(this::constantForce);
-    input.read("constant_torque", Vec3.CODEC).ifPresent(this::constantTorque);
     var orientation = rigidBody.orientation();
     orientation.set(
         input.getFloatOr("orient_x", orientation.x),
@@ -283,8 +261,6 @@ public class EntityRigidBody extends Entity {
     output.putDouble("friction", friction());
     output.store("angular_velocity", Vec3.CODEC, angularVelocity());
     output.store("linear_velocity", Vec3.CODEC, linearVelocity());
-    output.store("constant_force", Vec3.CODEC, constantForce());
-    output.store("constant_torque", Vec3.CODEC, constantTorque());
     var orientation = rigidBody.orientation();
     output.putFloat("orient_x", orientation.x);
     output.putFloat("orient_y", orientation.y);

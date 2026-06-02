@@ -25,8 +25,6 @@ public class RigidBody {
   private double belowSleepThresholdTime = 0.0D;
   private Vec3 angularVelocity = Vec3.ZERO;
   private Vec3 linearVelocity = Vec3.ZERO;
-  private Vec3 constantForce = Vec3.ZERO;
-  private Vec3 constantTorque = Vec3.ZERO;
   private boolean linearLock = false;
   private boolean freeze = false;
   private boolean sleeping = false;
@@ -114,22 +112,6 @@ public class RigidBody {
 
   public void angularVelocity(Vec3 angularVelocity) {
     this.angularVelocity = angularVelocity;
-  }
-
-  public Vec3 constantForce() {
-    return constantForce;
-  }
-
-  public void constantForce(Vec3 constantForce) {
-    this.constantForce = constantForce;
-  }
-
-  public Vec3 constantTorque() {
-    return constantTorque;
-  }
-
-  public void constantTorque(Vec3 constantTorque) {
-    this.constantTorque = constantTorque;
   }
 
   public double gravityScale() {

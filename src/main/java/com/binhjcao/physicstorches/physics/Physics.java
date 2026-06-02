@@ -84,7 +84,7 @@ public final class Physics {
     float dt = (float) (1.0D / (double) level.tickRateManager().tickrate());
     List<RigidBody> bodies = BodyAccumulationPhase.findBodies(level, dt);
     for (var body : bodies) {
-      integrateConstantForces(body, dt);
+      integrateGravity(body, dt);
     }
     var constraints = new ArrayList<ContactConstraint>();
     for (var manifold : findContactManifolds(bodies)) {
@@ -109,23 +109,11 @@ public final class Physics {
     }
   }
 
-  public static void integrateConstantForces(RigidBody body, double dt) {
+  private static void integrateGravity(RigidBody body, double dt) {
     if (body.isSleeping() || body.freeze()) {
       return;
     }
 
-    integrateGravity(body, dt);
-
-    if (body.constantForce().lengthSqr() > 1.0E-8D) {
-      body.applyImpulse(body.constantForce().scale(dt));
-    }
-
-    if (body.constantTorque().lengthSqr() > 1.0E-8D) {
-      body.applyAngularImpulse(body.constantTorque().scale(dt));
-    }
-  }
-
-  private static void integrateGravity(RigidBody body, double dt) {
     if (body.gravityScale() <= 1.0E-8D) {
       return;
     }
