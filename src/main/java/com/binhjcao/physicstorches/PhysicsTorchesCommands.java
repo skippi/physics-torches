@@ -120,7 +120,7 @@ public final class PhysicsTorchesCommands {
       protected void onSurfaceInput(Player player, Vec3 surfacePosition, Vec3 surfaceNormal) {
         Vec3 force = surfaceNormal.scale(-3.0D);
         Vec3 leverArm = surfacePosition.subtract(position());
-        applyTorqueImpulse(leverArm.cross(force).scale(0.35D));
+        rigidBody().applyTorque(leverArm.cross(force).scale(0.35D), 1.0D / level().tickRateManager().tickrate());
       }
     }
     player.level().addFreshEntity(new EntityTestTorque(player.level()));
@@ -138,7 +138,7 @@ public final class PhysicsTorchesCommands {
         Vec3 impulse =
           PlayerLookRay.from(player, 1.0F).normalizedDirection().scale(2.5D);
         Vec3 leverArm = surfacePosition.subtract(position());
-        applyImpulse(impulse, leverArm);
+        rigidBody().applyImpulse(impulse, leverArm);
       }
     }
     player.level().addFreshEntity(new EntityTestLinear(player.level()));
@@ -158,7 +158,7 @@ public final class PhysicsTorchesCommands {
         Vec3 impulse =
             PlayerLookRay.from(player, 1.0F).normalizedDirection().scale(2.5D);
         Vec3 leverArm = surfacePosition.subtract(position());
-        applyImpulse(impulse, leverArm);
+        rigidBody().applyImpulse(impulse, leverArm);
       }
     }
     player.level().addFreshEntity(new EntityTestCollision(player.level()));
@@ -180,7 +180,7 @@ public final class PhysicsTorchesCommands {
         Vec3 impulse =
             PlayerLookRay.from(player, 1.0F).normalizedDirection().scale(2.5D);
         Vec3 leverArm = surfacePosition.subtract(position());
-        applyImpulse(impulse, leverArm);
+        rigidBody().applyImpulse(impulse, leverArm);
       }
     }
     player.level().addFreshEntity(new EntityTestFriction(player.level()));

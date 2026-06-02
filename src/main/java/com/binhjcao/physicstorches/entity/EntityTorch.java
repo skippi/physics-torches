@@ -1,9 +1,11 @@
 package com.binhjcao.physicstorches.entity;
 
+import org.joml.Vector3f;
+import org.jspecify.annotations.Nullable;
+
 import com.binhjcao.physicstorches.BoxCollider;
 import com.binhjcao.physicstorches.Collider;
 import com.binhjcao.physicstorches.ModEntityTypes;
-import com.binhjcao.physicstorches.physics.Physics;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,11 +25,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import org.joml.Vector3f;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.Nullable;
 
 public class EntityTorch extends EntityRigidBody {
   public static final double HALF_WIDTH = 0.0625D;
@@ -40,10 +40,6 @@ public class EntityTorch extends EntityRigidBody {
   private static final double THROW_SPAWN_FORWARD = 0.25D;
   private static final double THROW_SPAWN_SIDE = 0.36D;
   private static final double THROW_SPIN_IMPULSE = 0.75D;
-  private static final double SETTLE_TORQUE = 0.035D;
-  private static final double FACE_FLAT_DOT = 0.92D;
-  private static final Vec3 WORLD_DOWN = new Vec3(0.0D, -1.0D, 0.0D);
-  private static final Vec3 WORLD_UP = new Vec3(0.0D, 1.0D, 0.0D);
 
   private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
       SynchedEntityData.defineId(EntityTorch.class, EntityDataSerializers.BLOCK_STATE);
@@ -103,10 +99,10 @@ public class EntityTorch extends EntityRigidBody {
     Vec3 dir = direction.normalize();
     wake();
     linearVelocity(dir.scale(THROW_SPEED).add(0.0D, THROW_LIFT, 0.0D));
-    Vec3 leverArm = toWorldDirection(new Vec3(0.0D, -HALF_HEIGHT, 0.0D));
+    Vec3 leverArm = rigidBody().toWorldDirection(new Vec3(0.0D, -HALF_HEIGHT, 0.0D));
     var random = level().getRandom();
     var variance = new Vec3(random.nextDouble(), random.nextDouble(), random.nextDouble()).scale(0.2).subtract(0.4);
-    applyTorqueImpulse(leverArm.cross(dir.add(variance).scale(-THROW_SPIN_IMPULSE)));
+    rigidBody().applyTorque(leverArm.cross(dir.add(variance).scale(-THROW_SPIN_IMPULSE)), 1.0D / level().tickRateManager().tickrate());
   }
 
   public Vec3 flamePosition(float partialTick) {
@@ -148,11 +144,6 @@ public class EntityTorch extends EntityRigidBody {
   @Override
   protected Collider createCollider() {
     return BoxCollider.box(HALF_WIDTH, HALF_HEIGHT, HALF_WIDTH);
-  }
-
-  @Override
-  protected int minimumStableSupportPoints() {
-    return 4;
   }
 
   public BlockState getBlockState() {

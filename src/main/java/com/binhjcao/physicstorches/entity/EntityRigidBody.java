@@ -1,5 +1,9 @@
 package com.binhjcao.physicstorches.entity;
 
+import java.util.Optional;
+
+import org.joml.Quaternionf;
+
 import com.binhjcao.physicstorches.BoxCollider;
 import com.binhjcao.physicstorches.Collider;
 import com.binhjcao.physicstorches.ModEntityTypes;
@@ -19,21 +23,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import org.joml.Quaternionf;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 public class EntityRigidBody extends Entity {
   public static final double HALF_SIZE = 0.5D;
   public static final double TARGET_REACH = 6.0D;
   public static final double PICK_BBOX_INFLATE = 0.03D;
-  private static final double SUPPORT_SURFACE_EPS = 0.06D;
-  private static final double STABLE_COM_EPS = 0.05D;
 
   public record PlayerLookRay(Vec3 origin, Vec3 direction) {
     public static PlayerLookRay from(Player player, float partialTick) {
@@ -401,99 +396,12 @@ public class EntityRigidBody extends Entity {
         collider().orientedBounds(collisionCenter(), getOrientation(1.0F), PICK_BBOX_INFLATE));
   }
 
-  public void applyForce(Vec3 force) {
-    applyForce(force, Vec3.ZERO);
-  }
-
-  public void applyForce(Vec3 force, Vec3 position) {
-    wake();
-    rigidBody.applyImpulse(force.scale(physicsDt()), position);
-  }
-
-  public void applyImpulse(Vec3 impulse) {
-    applyImpulse(impulse, Vec3.ZERO);
-  }
-
-  public void applyImpulse(Vec3 impulse, Vec3 position) {
-    wake();
-    rigidBody.applyImpulse(impulse, position);
-  }
-
-  public void applyTorque(Vec3 torque) {
-    wake();
-    rigidBody.applyTorque(torque, physicsDt());
-  }
-
-  public void applyTorqueImpulse(Vec3 impulse) {
-    wake();
-    rigidBody.applyAngularImpulse(impulse);
-  }
-
-  public double physicsDt() {
-    return 1.0D / level().tickRateManager().tickrate();
-  }
-
   protected void wake() {
     rigidBody.wake();
   }
 
   public void enterSleep() {
     rigidBody.enterSleep();
-  }
-
-  protected List<AABB> collectBlockAABBs(AABB searchBounds) {
-    List<AABB> blocks = new ArrayList<>();
-    for (VoxelShape shape : level().getBlockCollisions(this, searchBounds)) {
-      blocks.addAll(shape.toAabbs());
-    }
-    return blocks;
-  }
-
-  protected int minimumStableSupportPoints() {
-    return 3;
-  }
-
-  protected List<Vec3> findGroundSupportPoints() {
-    Vec3 center = collisionCenter();
-    Vec3[] corners = collider().worldCorners(center, rigidBody.orientation());
-    List<Vec3> supportPoints = new ArrayList<>();
-    for (Vec3 corner : corners) {
-      if (isCornerSupported(corner)) {
-        supportPoints.add(corner);
-      }
-    }
-    return supportPoints;
-  }
-
-  private boolean isCornerSupported(Vec3 corner) {
-    AABB probe =
-        new AABB(
-            corner.x - 0.01D,
-            corner.y - 0.15D,
-            corner.z - 0.01D,
-            corner.x + 0.01D,
-            corner.y + 0.05D,
-            corner.z + 0.01D);
-    for (AABB block : collectBlockAABBs(probe)) {
-      if (Math.abs(corner.y - block.maxY) > SUPPORT_SURFACE_EPS) {
-        continue;
-      }
-      if (corner.x >= block.minX - 1.0E-4D
-          && corner.x <= block.maxX + 1.0E-4D
-          && corner.z >= block.minZ - 1.0E-4D
-          && corner.z <= block.maxZ + 1.0E-4D) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public Vec3 toBodyDirection(Vec3 worldDirection) {
-    return rigidBody.toBodyDirection(worldDirection);
-  }
-
-  public Vec3 toWorldDirection(Vec3 bodyDirection) {
-    return rigidBody.toWorldDirection(bodyDirection);
   }
 
   protected void syncOrientationData() {
