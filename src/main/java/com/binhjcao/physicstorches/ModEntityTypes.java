@@ -2,7 +2,10 @@ package com.binhjcao.physicstorches;
 
 import org.jspecify.annotations.NonNull;
 
+import com.binhjcao.physicstorches.entity.EntityCopperTorch;
+import com.binhjcao.physicstorches.entity.EntityRedstoneTorch;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
+import com.binhjcao.physicstorches.entity.EntitySoulTorch;
 import com.binhjcao.physicstorches.entity.EntityTorch;
 
 import net.minecraft.core.Registry;
@@ -19,6 +22,30 @@ public final class ModEntityTypes {
           .sized((float) (EntityTorch.HALF_WIDTH * 2F), (float) EntityTorch.HEIGHT)
           .clientTrackingRange(64)
           .updateInterval(1));
+
+  public static final EntityType<EntityRedstoneTorch> REDSTONE_TORCH =
+      register(
+          "redstone_torch",
+          EntityType.Builder.<EntityRedstoneTorch>of(EntityRedstoneTorch::new, MobCategory.MISC)
+              .sized((float) (EntityTorch.HALF_WIDTH * 2F), (float) EntityTorch.HEIGHT)
+              .clientTrackingRange(64)
+              .updateInterval(1));
+
+  public static final EntityType<EntitySoulTorch> SOUL_TORCH =
+      register(
+          "soul_torch",
+          EntityType.Builder.<EntitySoulTorch>of(EntitySoulTorch::new, MobCategory.MISC)
+              .sized((float) (EntityTorch.HALF_WIDTH * 2F), (float) EntityTorch.HEIGHT)
+              .clientTrackingRange(64)
+              .updateInterval(1));
+
+  public static final EntityType<EntityCopperTorch> COPPER_TORCH =
+      register(
+          "copper_torch",
+          EntityType.Builder.<EntityCopperTorch>of(EntityCopperTorch::new, MobCategory.MISC)
+              .sized((float) (EntityTorch.HALF_WIDTH * 2F), (float) EntityTorch.HEIGHT)
+              .clientTrackingRange(64)
+              .updateInterval(1));
 
   public static final EntityType<EntityRigidBody> RIGID_BODY_CUBE = register("rigid_body_cube", EntityType.Builder.<EntityRigidBody>of(EntityRigidBody::new, MobCategory.MISC)
           .sized((float) (EntityRigidBody.HALF_SIZE * 2F), (float) (EntityRigidBody.HALF_SIZE * 2F))

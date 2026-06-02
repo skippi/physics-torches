@@ -74,7 +74,7 @@ public class EntityTorch extends EntityRigidBody {
             .add(side.scale(THROW_SPAWN_SIDE));
     Vec3 position = new Vec3(spawn.x, spawn.y - HALF_HEIGHT, spawn.z);
 
-    EntityTorch torch = new EntityTorch(player.level(), blockState, position);
+    EntityTorch torch = create(player.level(), blockState, position);
     player.level().addFreshEntity(torch);
     torch.fling(look);
     torch
@@ -125,6 +125,25 @@ public class EntityTorch extends EntityRigidBody {
     }
 
     return new Vec3(0.0D, y, 0.0D);
+  }
+
+  public static EntityTorch create(Level level, BlockState blockState, Vec3 position) {
+    var block = blockState.getBlock();
+    if (block == Blocks.REDSTONE_TORCH || block == Blocks.REDSTONE_WALL_TORCH) {
+      return new EntityRedstoneTorch(level, position);
+    }
+    if (block == Blocks.SOUL_TORCH || block == Blocks.SOUL_WALL_TORCH) {
+      return new EntitySoulTorch(level, position);
+    }
+    if (block == Blocks.COPPER_TORCH || block == Blocks.COPPER_WALL_TORCH) {
+      return new EntityCopperTorch(level, position);
+    }
+
+    return new EntityTorch(level, blockState, position);
+  }
+
+  protected ItemStack pickupItemStack() {
+    return itemStackForBlockState(getBlockState());
   }
 
   public static BlockState blockStateForTorch(ItemStack stack) {
@@ -213,7 +232,7 @@ public class EntityTorch extends EntityRigidBody {
     }
 
     if (!player.isCreative()) {
-      ItemStack stack = itemStackForBlockState(getBlockState());
+      ItemStack stack = pickupItemStack();
       stack.setCount(1);
 
       ItemEntity itemEntity = new ItemEntity(serverLevel, getX(), getY(), getZ(), stack);

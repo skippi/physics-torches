@@ -28,10 +28,11 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
     PhysicsTorchesDebugOptions.register();
     PhysicsTorchesKeyMappings.register();
 
-    EntityRenderers.register(
-        ModEntityTypes.TORCH, EntityTorchRenderer::new);
-    EntityRenderers.register(
-        ModEntityTypes.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
+    EntityRenderers.register(ModEntityTypes.TORCH, EntityTorchRenderer::new);
+    EntityRenderers.register(ModEntityTypes.REDSTONE_TORCH, EntityTorchRenderer::new);
+    EntityRenderers.register(ModEntityTypes.SOUL_TORCH, EntityTorchRenderer::new);
+    EntityRenderers.register(ModEntityTypes.COPPER_TORCH, EntityTorchRenderer::new);
+    EntityRenderers.register(ModEntityTypes.RIGID_BODY_CUBE, EntityRigidBodyRenderer::new);
 
     ClientTickEvents.END_CLIENT_TICK.register(PhysicsTorchesModClient::onClientTick);
   }

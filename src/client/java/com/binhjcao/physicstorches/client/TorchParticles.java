@@ -3,6 +3,7 @@ package com.binhjcao.physicstorches.client;
 import com.binhjcao.physicstorches.entity.EntityTorch;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -12,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 public final class TorchParticles {
   private static final int SPAWN_CHANCE = 40;
@@ -20,6 +22,8 @@ public final class TorchParticles {
   private static final double SPAWN_SPREAD = 0.1D;
   private static ClientLevel lastLevel;
   private static long lastParticleGameTime = -1L;
+
+  private record TorchParticleProfile(@Nullable ParticleOptions flame, boolean smoke) {}
 
   private TorchParticles() {}
 
@@ -52,14 +56,16 @@ public final class TorchParticles {
 
       Vec3 flame = torch.flamePosition(1.0F);
       RandomSource random = torch.getRandom();
-      ParticleOptions flameType = flameParticle(blockState);
+      TorchParticleProfile profile = profileFor(blockState);
 
-      for (int i = 0; i < SMOKE_PER_SPAWN; i++) {
-        spawnAt(level, ParticleTypes.SMOKE, flame.x, flame.y, flame.z, random);
+      if (profile.smoke()) {
+        for (int i = 0; i < SMOKE_PER_SPAWN; i++) {
+          spawnAt(level, ParticleTypes.SMOKE, flame.x, flame.y, flame.z, random);
+        }
       }
-      if (flameType != null) {
+      if (profile.flame() != null) {
         for (int i = 0; i < FLAME_PER_SPAWN; i++) {
-          spawnAt(level, flameType, flame.x, flame.y, flame.z, random);
+          spawnAt(level, profile.flame(), flame.x, flame.y, flame.z, random);
         }
       }
     }
@@ -91,11 +97,17 @@ public final class TorchParticles {
     return BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath().contains("torch");
   }
 
-  private static ParticleOptions flameParticle(BlockState state) {
+  private static TorchParticleProfile profileFor(BlockState state) {
+    if (state.is(Blocks.REDSTONE_TORCH) || state.is(Blocks.REDSTONE_WALL_TORCH)) {
+      return new TorchParticleProfile(DustParticleOptions.REDSTONE, false);
+    }
     if (state.is(Blocks.SOUL_TORCH) || state.is(Blocks.SOUL_WALL_TORCH)) {
-      return ParticleTypes.SOUL_FIRE_FLAME;
+      return new TorchParticleProfile(ParticleTypes.SOUL_FIRE_FLAME, true);
+    }
+    if (state.is(Blocks.COPPER_TORCH) || state.is(Blocks.COPPER_WALL_TORCH)) {
+      return new TorchParticleProfile(ParticleTypes.COPPER_FIRE_FLAME, true);
     }
 
-    return ParticleTypes.FLAME;
+    return new TorchParticleProfile(ParticleTypes.FLAME, true);
   }
 }
