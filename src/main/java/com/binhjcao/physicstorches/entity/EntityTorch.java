@@ -9,6 +9,8 @@ import com.binhjcao.physicstorches.ModEntityTypes;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -242,6 +244,18 @@ public class EntityTorch extends EntityRigidBody {
       serverLevel.addFreshEntity(itemEntity);
       itemEntity.playerTouch(player);
     }
+
+    serverLevel.sendParticles(
+      new BlockParticleOption(ParticleTypes.BLOCK, getBlockState()),
+      getX(),
+      getY(),
+      getZ(),
+      10,
+      getBbWidth() / 4.0F,
+      getBbHeight() / 4.0F,
+      getBbWidth() / 4.0F,
+      0.05
+    );
 
     discard();
     return true;
