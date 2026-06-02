@@ -1,10 +1,14 @@
 package com.binhjcao.physicstorches;
 
+import com.binhjcao.physicstorches.entity.EntityRigidBody;
 import com.binhjcao.physicstorches.entity.EntityTorch;
+import com.binhjcao.physicstorches.entity.LevelRigidBodyRegistry;
 import com.binhjcao.physicstorches.entity.TorchLight;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLevelEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -18,7 +22,24 @@ public class PhysicsTorchesMod implements ModInitializer {
 
   @Override
   public void onInitialize() {
-    ServerLevelEvents.LOAD.register((server, level) -> TorchLight.onLevelLoad(level));
+    ServerTickEvents.END_LEVEL_TICK.register(Physics::step);
+    ServerEntityEvents.ENTITY_LOAD.register(
+        (entity, level) -> {
+          if (entity instanceof EntityRigidBody body) {
+            LevelRigidBodyRegistry.add(body);
+          }
+        });
+    ServerEntityEvents.ENTITY_UNLOAD.register(
+        (entity, level) -> {
+          if (entity instanceof EntityRigidBody body) {
+            LevelRigidBodyRegistry.remove(body);
+          }
+        });
+    ServerLevelEvents.LOAD.register((server, level) -> {
+      TorchLight.onLevelLoad(level);
+      LevelRigidBodyRegistry.reconcile(level);
+    });
+    ServerLevelEvents.UNLOAD.register((server, level) -> LevelRigidBodyRegistry.clearLevel(level));
     PhysicsTorchesCommands.register();
     PayloadTypeRegistry.serverboundPlay().register(DropTorchPayload.TYPE, DropTorchPayload.CODEC);
 

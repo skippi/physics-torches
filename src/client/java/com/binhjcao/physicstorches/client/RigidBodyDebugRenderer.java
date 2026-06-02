@@ -1,5 +1,6 @@
 package com.binhjcao.physicstorches.client;
 
+import com.binhjcao.physicstorches.ContactManifold;
 import com.binhjcao.physicstorches.Physics;
 import com.binhjcao.physicstorches.RaycastHit;
 import com.binhjcao.physicstorches.entity.EntityRigidBody;
@@ -11,12 +12,15 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 public final class RigidBodyDebugRenderer {
   private static final int COLLISION_OUTLINE_COLOR = 0xFF00FF00;
   private static final int HIT_POINT_COLOR = 0xFFFF5555;
   private static final int HIT_NORMAL_COLOR = 0xFF55FFFF;
+  private static final int CONTACT_POINT_COLOR = 0xFFFFAA00;
+  private static final int CONTACT_NORMAL_COLOR = 0xFFFF55FF;
 
   private RigidBodyDebugRenderer() {}
 
@@ -33,7 +37,9 @@ public final class RigidBodyDebugRenderer {
         client.debugEntries.isCurrentlyEnabled(PhysicsTorchesDebugOptions.VISUALIZE_RIGIDBODY);
     boolean visualizeTransform =
         client.debugEntries.isCurrentlyEnabled(PhysicsTorchesDebugOptions.VISUALIZE_TRANSFORM);
-    if (!visualizeCollision && !visualizeTransform) {
+    boolean visualizeContacts =
+        client.debugEntries.isCurrentlyEnabled(PhysicsTorchesDebugOptions.VISUALIZE_CONTACTS);
+    if (!visualizeCollision && !visualizeTransform && !visualizeContacts) {
       return;
     }
 
@@ -41,6 +47,10 @@ public final class RigidBodyDebugRenderer {
       float partialTick = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);
       if (visualizeCollision) {
         renderCollisionOutlines(level, partialTick);
+      }
+
+      if (visualizeContacts) {
+        renderContactPoints(level);
       }
 
       if (visualizeTransform) {
@@ -78,6 +88,24 @@ public final class RigidBodyDebugRenderer {
 
   private static void emitEdge(Vec3 start, Vec3 end) {
     Gizmos.line(start, end, COLLISION_OUTLINE_COLOR);
+  }
+
+  private static void renderContactPoints(ClientLevel level) {
+    for (Entity entity : level.entitiesForRendering()) {
+      if (!(entity instanceof EntityRigidBody rigidBody) || rigidBody.isSleeping()) {
+        continue;
+      }
+      for (ContactManifold manifold : Physics.findContactManifoldsForEntity(rigidBody, level)) {
+        renderContactSide(manifold.contactsOnA(), manifold.normal());
+      }
+    }
+  }
+
+  private static void renderContactSide(ArrayList<Vec3> points, Vec3 outwardNormal) {
+    for (Vec3 point : points) {
+      Gizmos.point(point, CONTACT_POINT_COLOR, 8.0F);
+      Gizmos.arrow(point, point.add(outwardNormal.scale(0.25D)), CONTACT_NORMAL_COLOR);
+    }
   }
 
   private static void renderTransformTarget(Minecraft client, ClientLevel level, float partialTick) {

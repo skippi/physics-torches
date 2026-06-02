@@ -1,7 +1,9 @@
 package com.binhjcao.physicstorches.entity;
 
 import com.binhjcao.physicstorches.BoxCollider;
+import com.binhjcao.physicstorches.Collider;
 import com.binhjcao.physicstorches.ModEntityTypes;
+import com.binhjcao.physicstorches.Physics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -59,7 +61,7 @@ public class EntityTorch extends EntityRigidBody {
   public EntityTorch(Level level, BlockState blockState, Vec3 position) {
     this(ModEntityTypes.TORCH, level);
     setBlockState(blockState);
-    setPos(position.x, position.y, position.z);
+    setCollisionCenter(position);
   }
 
   public static boolean throwFromPlayer(
@@ -143,7 +145,7 @@ public class EntityTorch extends EntityRigidBody {
   }
 
   @Override
-  protected BoxCollider createCollider() {
+  protected Collider createCollider() {
     return BoxCollider.box(HALF_WIDTH, HALF_HEIGHT, HALF_WIDTH);
   }
 
@@ -173,13 +175,13 @@ public class EntityTorch extends EntityRigidBody {
     super.tick();
 
     if (!level().isClientSide()) {
-      applyGroundSettling();
+      //applyGroundSettling();
       TorchLight.update(this);
     }
   }
 
   private void applyGroundSettling() {
-    if (sleeping() || findGroundSupportPoints().isEmpty()) {
+    if (isSleeping() || findGroundSupportPoints().isEmpty()) {
       return;
     }
 
@@ -243,7 +245,7 @@ public class EntityTorch extends EntityRigidBody {
   }
 
   private void dampMicroWobble() {
-    double threshold = sleepThreshold();
+    double threshold = Physics.SLEEP_THRESHOLD;
     if (linearVelocity().lengthSqr() + angularVelocity().lengthSqr() <= threshold * threshold * 4.0D) {
       linearVelocity(Vec3.ZERO);
       angularVelocity(Vec3.ZERO);
