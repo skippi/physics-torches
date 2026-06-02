@@ -102,7 +102,7 @@ public class EntityTorch extends EntityRigidBody {
     Vec3 leverArm = rigidBody().toWorldDirection(new Vec3(0.0D, -HALF_HEIGHT, 0.0D));
     var random = level().getRandom();
     var variance = new Vec3(random.nextDouble(), random.nextDouble(), random.nextDouble()).scale(0.2).subtract(0.4);
-    rigidBody().applyTorque(leverArm.cross(dir.add(variance).scale(-THROW_SPIN_IMPULSE)), 1.0D / level().tickRateManager().tickrate());
+    rigidBody().applyAngularImpulse(leverArm.cross(dir.add(variance).scale(-THROW_SPIN_IMPULSE)));
   }
 
   public Vec3 flamePosition(float partialTick) {
