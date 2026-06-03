@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
 public class EntityRigidBody extends Entity {
   public static final double HALF_SIZE = 0.5D;
   public static final double TARGET_REACH = 6.0D;
-  public static final double PICK_BBOX_INFLATE = 0.03D;
+  public static final double PICK_BBOX_INFLATE = 0.1D;
 
   public record PlayerLookRay(Vec3 origin, Vec3 direction) {
     public static PlayerLookRay from(Player player, float partialTick) {
