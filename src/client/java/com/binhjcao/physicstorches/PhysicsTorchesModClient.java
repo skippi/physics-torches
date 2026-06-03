@@ -6,7 +6,6 @@ import com.binhjcao.physicstorches.client.PhysicsTorchesDebugOptions;
 import com.binhjcao.physicstorches.client.PhysicsTorchesKeyMappings;
 import com.binhjcao.physicstorches.client.RigidBodyDebugRenderer;
 import com.binhjcao.physicstorches.client.TorchHoverOutlineRenderer;
-import com.binhjcao.physicstorches.client.TorchParticles;
 import com.binhjcao.physicstorches.entity.RigidBodyCrosshairHover;
 import com.binhjcao.physicstorches.network.DropTorchPayload;
 import net.fabricmc.api.ClientModInitializer;
@@ -39,7 +38,6 @@ public class PhysicsTorchesModClient implements ClientModInitializer {
 
   private static void onClientTick(Minecraft client) {
     if (client.level instanceof ClientLevel clientLevel) {
-      TorchParticles.tick(clientLevel, client);
       RigidBodyDebugRenderer.tick(client);
 
       float partialTick = client.getDeltaTracker().getGameTimeDeltaPartialTick(false);

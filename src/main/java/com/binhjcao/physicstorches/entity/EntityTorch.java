@@ -10,6 +10,8 @@ import com.binhjcao.physicstorches.ModEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -26,6 +28,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RedstoneTorchBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.ValueInput;
@@ -198,9 +201,48 @@ public class EntityTorch extends EntityRigidBody {
   public void tick() {
     super.tick();
 
-    if (!level().isClientSide()) {
+    if (level().isClientSide()) {
+      if (level().getRandom().nextDouble() < 0.18321D) {
+        // 0.18321D is the probability of the torch lighting up per tick
+        // This is derived from client-side code, where a random block is chosen 
+        // twice in a 667 iteration loop within 16 and 32 radius AABB respectively, every tick.
+        // See TorchBlock#animateTick().
+        animateParticles();
+      }
+    } else {
       TorchLight.update(this);
     }
+  }
+
+  private void animateParticles() {
+    BlockState state = getBlockState();
+    if (state.hasProperty(RedstoneTorchBlock.LIT) && !state.getValue(RedstoneTorchBlock.LIT)) {
+      return;
+    }
+
+    Vec3 flame = flamePosition(1.0F);
+    if (!state.is(Blocks.REDSTONE_TORCH) && !state.is(Blocks.REDSTONE_WALL_TORCH)) {
+      level().addParticle(ParticleTypes.SMOKE, flame.x, flame.y, flame.z, 0.0, 0.0, 0.0);
+    }
+
+    ParticleOptions flameParticle = flameParticleFor(state);
+    if (flameParticle != null) {
+      level().addParticle(flameParticle, flame.x, flame.y, flame.z, 0.0, 0.0, 0.0);
+    }
+  }
+
+  private static ParticleOptions flameParticleFor(BlockState state) {
+    if (state.is(Blocks.REDSTONE_TORCH) || state.is(Blocks.REDSTONE_WALL_TORCH)) {
+      return DustParticleOptions.REDSTONE;
+    }
+    if (state.is(Blocks.SOUL_TORCH) || state.is(Blocks.SOUL_WALL_TORCH)) {
+      return ParticleTypes.SOUL_FIRE_FLAME;
+    }
+    if (state.is(Blocks.COPPER_TORCH) || state.is(Blocks.COPPER_WALL_TORCH)) {
+      return ParticleTypes.COPPER_FIRE_FLAME;
+    }
+
+    return ParticleTypes.FLAME;
   }
 
   @Override
