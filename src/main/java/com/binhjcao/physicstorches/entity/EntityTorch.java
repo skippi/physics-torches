@@ -42,7 +42,7 @@ public class EntityTorch extends EntityRigidBody {
   private static final double THROW_LIFT = 1D;
   private static final double THROW_SPAWN_FORWARD = 0.25D;
   private static final double THROW_SPAWN_SIDE = 0.36D;
-  private static final double THROW_SPIN_IMPULSE = 0.75D;
+  private static final double THROW_SPIN_IMPULSE = 0.2D;
 
   private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE =
       SynchedEntityData.defineId(EntityTorch.class, EntityDataSerializers.BLOCK_STATE);
@@ -79,7 +79,6 @@ public class EntityTorch extends EntityRigidBody {
     Vec3 position = new Vec3(spawn.x, spawn.y - HALF_HEIGHT, spawn.z);
 
     EntityTorch torch = create(player.level(), blockState, position);
-    player.level().addFreshEntity(torch);
     torch.fling(look);
     torch
         .rigidBody()
@@ -89,6 +88,7 @@ public class EntityTorch extends EntityRigidBody {
                 .linearVelocity()
                 .add(
                     playerDeltaMovement.scale(player.level().tickRateManager().tickrate())));
+    player.level().addFreshEntity(torch);
     if (!player.isCreative()) {
       stack.shrink(1);
     }
@@ -106,10 +106,16 @@ public class EntityTorch extends EntityRigidBody {
     Vec3 dir = direction.normalize();
     wake();
     rigidBody().linearVelocity(dir.scale(THROW_SPEED).add(0.0D, THROW_LIFT, 0.0D));
-    Vec3 leverArm = rigidBody().toWorldDirection(new Vec3(0.0D, -HALF_HEIGHT, 0.0D));
-    var random = level().getRandom();
-    var variance = new Vec3(random.nextDouble(), random.nextDouble(), random.nextDouble()).scale(0.2).subtract(0.4);
-    rigidBody().applyAngularImpulse(leverArm.cross(dir.add(variance).scale(-THROW_SPIN_IMPULSE)));
+    Vec3 torchAxis = rigidBody().toWorldDirection(new Vec3(0.0D, 1.0D, 0.0D)).normalize();
+    Vec3 spinAxis = torchAxis.cross(dir);
+    if (spinAxis.lengthSqr() < 1.0E-6) {
+        // Torch already aligned with travel; pick a stable fallback axis.
+        spinAxis = rigidBody().toWorldDirection(new Vec3(1.0D, 0.0D, 0.0D));
+    } else {
+        spinAxis = spinAxis.normalize();
+    }
+    double spinAmount = THROW_SPIN_IMPULSE * (0.9D + random.nextDouble() * 0.2D);
+    rigidBody().applyAngularImpulse(spinAxis.scale(spinAmount));
   }
 
   public Vec3 flamePosition(float partialTick) {
