@@ -16,6 +16,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -233,6 +234,8 @@ public class EntityTorch extends EntityRigidBody {
       return false;
     }
 
+    var soundType = getBlockState().getSoundType();
+    serverLevel.playSound(null, getX(), getY(), getZ(), soundType.getBreakSound(), SoundSource.NEUTRAL, (soundType.getVolume() + 1.0F) / 2.0F, soundType.getPitch() * 0.8F);
     if (!player.isCreative()) {
       ItemStack stack = pickupItemStack();
       stack.setCount(1);
