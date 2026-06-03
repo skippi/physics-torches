@@ -59,7 +59,7 @@ public class BodyAccumulationPhase {
       return bounds;
     }
 
-    double expand = body.maxPointVelocity() * dt + Physics.SURFACE_TOLERANCE;
+    double expand = body.maxPointVelocity() * dt + Physics.MANIFOLD_TOLERANCE;
     return bounds.inflate(expand);
   }
 

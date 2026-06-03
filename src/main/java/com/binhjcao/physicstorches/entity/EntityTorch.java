@@ -52,9 +52,10 @@ public class EntityTorch extends EntityRigidBody {
   public EntityTorch(EntityType<? extends EntityTorch> type, Level level) {
     super(type, level);
     rigidBody().mass(0.5D);
-    rigidBody().linearDamp(0.6D);
-    rigidBody().angularDamp(0.05D);
-    rigidBody().friction(0.5D);
+    rigidBody().linearDamp(0.7D);
+    rigidBody().angularDamp(0.7D);
+    rigidBody().friction(0.7D);
+    rigidBody().bounce(0.2D);
     inputRayPickable(true);
   }
 

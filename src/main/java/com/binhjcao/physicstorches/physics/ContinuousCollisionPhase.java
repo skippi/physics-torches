@@ -203,7 +203,7 @@ public class ContinuousCollisionPhase {
   }
 
   private static boolean isValidBlockSurfaceHit(Vec3 sampleStart, AABB bounds, Vec3 normal) {
-    if (sampleStart.y >= bounds.maxY - Physics.SURFACE_TOLERANCE) {
+    if (sampleStart.y >= bounds.maxY - Physics.MANIFOLD_TOLERANCE) {
       return Math.abs(normal.y) > 0.9D;
     }
     return true;

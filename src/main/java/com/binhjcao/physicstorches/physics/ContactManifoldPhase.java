@@ -155,7 +155,7 @@ public class ContactManifoldPhase {
   private static List<Vec3> filterPointsOverlappingReference(
       List<Vec3> points, Vec3 refCenter, Quaternionf refOrient, Collider refCollider) {
     var filtered = new ArrayList<Vec3>();
-    double tolerance = Physics.SURFACE_TOLERANCE;
+    double tolerance = Physics.MANIFOLD_TOLERANCE;
     for (Vec3 point : points) {
       if (overlapsReference(point, refCenter, refOrient, refCollider, tolerance)) {
         filtered.add(point);

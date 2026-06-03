@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 public final class Physics {
   public static final double GRAVITY = 9.81D;
-  public static final double SURFACE_TOLERANCE = 0.05D;
+  public static final double MANIFOLD_TOLERANCE = 0.01D;
   public static final double CONTACT_MAX_ALLOWED_PENETRATION = 0.01D;
   public static final double PENETRATION_SLOP = 0.02D;
   public static final double SLEEP_THRESHOLD = 0.03D;
@@ -35,7 +35,7 @@ public final class Physics {
     }
 
     var seenBlocks = new java.util.HashSet<BlockBoundsKey>();
-    AABB searchBounds = entity.getBoundingBox().inflate(SURFACE_TOLERANCE);
+    AABB searchBounds = entity.getBoundingBox().inflate(MANIFOLD_TOLERANCE);
     for (var shape : level.getBlockCollisions(entity, searchBounds)) {
       for (AABB block : shape.toAabbs()) {
         if (!seenBlocks.add(BlockBoundsKey.from(block))) {
@@ -195,7 +195,7 @@ public final class Physics {
     Collider collider = body.rigidBody().collider();
     Optional<ColliderHit> hit =
         raycastCollider(collider, orientation, center, origin, direction, maxDistance);
-    if (hit.isEmpty() && SURFACE_TOLERANCE > 0.0D) {
+    if (hit.isEmpty() && MANIFOLD_TOLERANCE > 0.0D) {
       hit =
           raycastCollider(
               collider,
@@ -204,7 +204,7 @@ public final class Physics {
               origin,
               direction,
               maxDistance,
-              SURFACE_TOLERANCE);
+              MANIFOLD_TOLERANCE);
     }
     return hit.map(result -> new RaycastHit(body, result.point(), result.normal()));
   }
