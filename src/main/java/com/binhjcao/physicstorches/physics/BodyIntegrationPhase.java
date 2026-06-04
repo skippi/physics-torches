@@ -6,6 +6,7 @@ public class BodyIntegrationPhase {
       return;
     }
 
+    body.clampAngularVelocity();
     integrateLinearVelocity(body, dt);
     integrateAngularVelocity(body, dt);
     dampLinearVelocity(body, dt);

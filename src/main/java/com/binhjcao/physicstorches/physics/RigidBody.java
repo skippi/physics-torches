@@ -28,6 +28,7 @@ public class RigidBody {
   private boolean linearLock = false;
   private boolean freeze = false;
   private boolean sleeping = false;
+  private double maxAngularVelocity = Double.POSITIVE_INFINITY; // radians per second
 
   public RigidBody(Collider collider) {
     this(collider, Vec3.ZERO, null);
@@ -64,6 +65,19 @@ public class RigidBody {
     body.gravityScale(0.0D);
     body.friction(1.0D);
     return body;
+  }
+
+  public void clampAngularVelocity() {
+    var factor = Math.min(angularVelocity().length(), maxAngularVelocity()) / angularVelocity().length();
+    angularVelocity(angularVelocity().scale(factor));
+  }
+
+  public double maxAngularVelocity() {
+    return maxAngularVelocity;
+  }
+
+  public void maxAngularVelocity(double maxAngularVelocity) {
+    this.maxAngularVelocity = maxAngularVelocity;
   }
 
   public Vec3 position() {

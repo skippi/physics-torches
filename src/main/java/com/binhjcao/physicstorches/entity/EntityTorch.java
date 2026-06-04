@@ -41,7 +41,7 @@ public class EntityTorch extends EntityRigidBody {
   public static final double HALF_HEIGHT = HEIGHT * 0.5D;
   private static final double FLAME_HEIGHT = 0.7D;
   private static final double WALL_FLAME_OFFSET = 0.27D;
-  private static final double THROW_SPEED = 25;
+  private static final double THROW_SPEED = 15;
   private static final double THROW_LIFT = 1D;
   private static final double THROW_SPAWN_FORWARD = 0.25D;
   private static final double THROW_SPAWN_SIDE = 0.36D;
@@ -55,10 +55,11 @@ public class EntityTorch extends EntityRigidBody {
   public EntityTorch(EntityType<? extends EntityTorch> type, Level level) {
     super(type, level);
     rigidBody().mass(0.5D);
-    rigidBody().linearDamp(0.7D);
-    rigidBody().angularDamp(0.7D);
-    rigidBody().friction(0.7D);
-    rigidBody().bounce(0.2D);
+    rigidBody().linearDamp(0.5D);
+    rigidBody().angularDamp(0.8D);
+    rigidBody().friction(0.8D);
+    rigidBody().maxAngularVelocity(7D);
+    rigidBody().bounce(0.1D);
     inputRayPickable(true);
   }
 
