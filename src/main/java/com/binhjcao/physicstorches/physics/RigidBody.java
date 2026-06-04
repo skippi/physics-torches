@@ -68,7 +68,11 @@ public class RigidBody {
   }
 
   public void clampAngularVelocity() {
-    var factor = Math.min(angularVelocity().length(), maxAngularVelocity()) / angularVelocity().length();
+    double angularSpeed = angularVelocity().length();
+    if (angularSpeed <= 1.0E-8D || angularSpeed <= maxAngularVelocity()) {
+      return;
+    }
+    var factor = maxAngularVelocity() / angularSpeed;
     angularVelocity(angularVelocity().scale(factor));
   }
 
