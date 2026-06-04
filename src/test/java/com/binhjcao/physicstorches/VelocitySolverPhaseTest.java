@@ -29,6 +29,20 @@ class VelocitySolverPhaseTest {
     assertTrue(cube.linearVelocity().y >= -EPS);
   }
 
+  @Test
+  void Solve_DoesNotBounceLowSpeedRestingContact_CubeHasRestitution() {
+    var cube = RigidBody.cube(0.5D, new Vec3(0.5D, 1.45D, 0.5D));
+    var block = groundBlock();
+    cube.bounce(0.2D);
+    cube.linearVelocity(new Vec3(0.0D, -0.5D, 0.0D));
+
+    var constraint = groundConstraint(cube, block);
+    VelocitySolverPhase.solve(List.of(constraint));
+
+    assertTrue(cube.linearVelocity().y <= EPS, "low-speed resting contact should not bounce");
+    assertTrue(cube.linearVelocity().y >= -EPS, "contact should still stop inward velocity");
+  }
+
   private static ContactConstraint groundConstraint(RigidBody cube, RigidBody block) {
     var contact = NarrowPhase.findContactCandidate(cube, block).orElseThrow();
     var manifold = ContactManifoldPhase.generateContactManifold(contact);

@@ -76,7 +76,7 @@ public class NarrowPhase {
       double projA = normalized.dot(centerA);
       double projB = normalized.dot(centerB);
       double depth = radiusA + radiusB - Math.abs(projA - projB);
-      if (depth <= 0.0D) {
+      if (depth < -Physics.MANIFOLD_TOLERANCE) {
         return null;
       }
       if (depth < minDepth) {

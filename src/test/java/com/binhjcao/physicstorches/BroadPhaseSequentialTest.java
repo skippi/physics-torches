@@ -44,6 +44,17 @@ class BroadPhaseSequentialTest {
   }
 
   @Test
+  void FindActiveBodies_ReturnsOnePair_BodiesAreSeparatedByManifoldTolerance() {
+    var bodyA = RigidBody.cube(0.5D, new Vec3(0.0D, 0.0D, 0.0D));
+    var bodyB = RigidBody.cube(0.5D, new Vec3(1.005D, 0.0D, 0.0D));
+
+    var pairs = BroadPhaseSequential.findActiveBodies(List.of(bodyA, bodyB));
+
+    assertEquals(1, pairs.size());
+    assertPair(pairs.getFirst(), bodyA, bodyB);
+  }
+
+  @Test
   void FindActiveBodies_ReturnsNoPairs_BothOverlappingBodiesAreFrozen() {
     var bodyA = RigidBody.cube(0.5D, new Vec3(0.0D, 0.0D, 0.0D));
     var bodyB = RigidBody.cube(0.5D, new Vec3(0.5D, 0.0D, 0.0D));

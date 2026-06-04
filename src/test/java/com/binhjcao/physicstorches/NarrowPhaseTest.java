@@ -24,6 +24,17 @@ class NarrowPhaseTest {
     assertEquals(0.0D, contact.normal().z, EPS);
   }
 
+  @Test
+  void FindContactCandidate_ReturnsCandidate_CubeIsSeparatedByManifoldTolerance() {
+    var cube = RigidBody.cube(0.5D, new Vec3(0.5D, 1.005D + 0.5D, 0.5D));
+    var block = groundBlock();
+
+    var contact = NarrowPhase.findContactCandidate(cube, block).orElseThrow();
+
+    assertEquals(-0.005D, contact.penetration(), EPS);
+    assertEquals(-1.0D, contact.normal().y, EPS);
+  }
+
   private static RigidBody groundBlock() {
     return RigidBody.frozenFromBlockAabb(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D));
   }

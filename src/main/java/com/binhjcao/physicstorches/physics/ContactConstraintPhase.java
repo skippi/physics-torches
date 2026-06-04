@@ -8,7 +8,7 @@ import org.joml.Quaternionf;
 import com.binhjcao.physicstorches.OrientedTransform;
 
 public class ContactConstraintPhase {
-  private static final float RESTITUTION_VELOCITY_THRESHOLD = 0.1F;
+  private static final float RESTITUTION_VELOCITY_THRESHOLD = 1.0F;
 
   public static ContactConstraint setupContactConstraint(
       ContactManifold manifold, double deltaTime) {

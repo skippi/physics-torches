@@ -17,7 +17,7 @@ public class BroadPhaseSequential {
         if (body1.isSleeping() && body2.isSleeping()) {
           continue;
         }
-        if (body1.bounds().intersects(body2.bounds())) {
+        if (body1.bounds().inflate(Physics.MANIFOLD_TOLERANCE).intersects(body2.bounds())) {
           result.add(BroadPhasePair.of(body1, body2));
         }
       }

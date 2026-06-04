@@ -35,15 +35,13 @@ public class ContinuousCollisionPhase {
       }
 
       SweepHit sweepHit = hit.get();
+      if (sweepHit.startedInside()) {
+        continue;
+      }
       RigidBody block = sweepHit.block();
       applySweepHit(body, sweepHit);
-      removeLinearVelocityIntoHit(body, sweepHit.normal());
 
-      NarrowPhase.findContactCandidate(body, block)
-          .or(() -> findContactAfterSurfaceNudge(body, block, sweepHit.normal()))
-          .map(ContactManifoldPhase::generateContactManifold)
-          .map(manifold -> ContactConstraintPhase.setupContactConstraint(manifold, dt))
-          .ifPresent(ccdConstraints::add);
+      ccdConstraints.add(setupSweepContactConstraint(body, block, sweepHit, dt));
     }
 
     if (ccdConstraints.isEmpty()) {
@@ -54,10 +52,25 @@ public class ContinuousCollisionPhase {
     constraints.addAll(ccdConstraints);
   }
 
-  private static Optional<NarrowPhaseContact> findContactAfterSurfaceNudge(
-      RigidBody body, RigidBody block, Vec3 normal) {
-    body.position(body.position().subtract(normal.scale(Physics.PENETRATION_SLOP)));
-    return NarrowPhase.findContactCandidate(body, block);
+  private static ContactConstraint setupSweepContactConstraint(
+      RigidBody body, RigidBody block, SweepHit hit, double dt) {
+    Vec3 contactOnBody =
+        OrientedTransform.toWorldPoint(hit.localSample(), body.position(), body.orientation());
+    Vec3 contactOnBlock = contactOnBody.subtract(hit.normal().scale(CONTACT_EPSILON));
+    var contactsOnBody = new ArrayList<Vec3>();
+    var contactsOnBlock = new ArrayList<Vec3>();
+    contactsOnBody.add(contactOnBody);
+    contactsOnBlock.add(contactOnBlock);
+    var manifold =
+        new ContactManifold(
+            body,
+            block,
+            contactOnBody,
+            hit.normal(),
+            CONTACT_EPSILON,
+            contactsOnBody,
+            contactsOnBlock);
+    return ContactConstraintPhase.setupContactConstraint(manifold, dt);
   }
 
   private static void applySweepHit(RigidBody body, SweepHit hit) {
@@ -117,13 +130,27 @@ public class ContinuousCollisionPhase {
         }
 
         SweepHit hit = sampleHit.get();
-        if (best == null || hit.time() < best.time()) {
+        if (isBetterSweepHit(hit, best)) {
           best = hit;
         }
       }
     }
 
     return Optional.ofNullable(best);
+  }
+
+  private static boolean isBetterSweepHit(SweepHit candidate, SweepHit currentBest) {
+    if (currentBest == null) {
+      return true;
+    }
+    if (candidate.time() < currentBest.time() - SWEEP_EPSILON) {
+      return true;
+    }
+    if (candidate.time() > currentBest.time() + SWEEP_EPSILON) {
+      return false;
+    }
+    return candidate.localSample().horizontalDistanceSqr()
+        < currentBest.localSample().horizontalDistanceSqr();
   }
 
   private static Optional<SweepHit> sweepSampleAgainstAabb(
@@ -230,14 +257,6 @@ public class ContinuousCollisionPhase {
       new Vec3(0.0D, -hy, hz),
       new Vec3(0.0D, -hy, -hz)
     };
-  }
-
-  private static void removeLinearVelocityIntoHit(RigidBody body, Vec3 normal) {
-    double inwardSpeed = body.linearVelocity().dot(normal);
-    if (inwardSpeed <= 0.0D) {
-      return;
-    }
-    body.linearVelocity(body.linearVelocity().subtract(normal.scale(inwardSpeed)));
   }
 
   private static Optional<SegmentHit> sweepPointAgainstAabb(Vec3 start, Vec3 end, AABB bounds) {

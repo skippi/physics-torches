@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Quaternionf;
 import org.junit.jupiter.api.Test;
 
 import com.binhjcao.physicstorches.physics.BodyIntegrationPhase;
@@ -59,6 +60,37 @@ class ContinuousCollisionPhaseTest {
     assertTrue(
         body.position().x > -0.5D,
         "body did not advance toward floor, x=" + body.position().x);
+  }
+
+  @Test
+  void Solve_GeneratesAngularVelocity_CubeFallsStraightDownOntoBlockEdge() {
+    var body = RigidBody.cube(0.5D, new Vec3(1.1D, 1.75D, 0.5D));
+    body.linearVelocity(new Vec3(0.0D, -25.0D, 0.0D));
+    var block = RigidBody.frozenFromBlockAabb(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D));
+    integrateWithCcd(body, block, new ArrayList<>());
+
+    assertTrue(
+        body.angularVelocity().lengthSqr() > 1.0E-8D,
+        "edge impact should create angular velocity, angular=" + body.angularVelocity());
+  }
+
+  @Test
+  void Solve_DoesNotApplyCcdImpactImpulse_BodyStartsTouchingSurface() {
+    var body =
+        new RigidBody(
+            BoxCollider.box(0.0625D, 0.3125D, 0.0625D),
+            new Vec3(0.5D, 1.0624D, 0.5D),
+            new Quaternionf().rotateZ((float) (Math.PI / 2.0D)));
+    body.linearVelocity(new Vec3(0.0D, -0.1D, 0.0D));
+    var block = RigidBody.frozenFromBlockAabb(new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D));
+    var constraints = new ArrayList<ContactConstraint>();
+
+    integrateWithCcd(body, block, constraints);
+
+    assertTrue(constraints.isEmpty(), "started-inside sweeps should stay on the resting path");
+    assertTrue(
+        body.angularVelocity().lengthSqr() <= 1.0E-12D,
+        "resting sweep should not inject angular velocity, angular=" + body.angularVelocity());
   }
 
   private static void integrateWithCcd(
